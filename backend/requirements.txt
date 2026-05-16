@@ -1,0 +1,11 @@
+chromadb==0.5.23
+sentence-transformers==3.3.1
+python-dotenv==1.0.1
+tqdm==4.67.1
+
+# M3 additions
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+anthropic==0.40.0
+firebase-admin==6.6.0
+pydantic==2.10.3

@@ -1,0 +1,112 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+
+  body {
+    background: #0D0404;
+    color: #E8F4FD;
+    font-family: 'JetBrains Mono', monospace;
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+  }
+
+  /* Subtle CRT scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+  }
+
+  /* Moving scanline */
+  body::after {
+    content: '';
+    position: fixed;
+    left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(transparent, rgba(192,57,43,0.12), transparent);
+    animation: scanline 8s linear infinite;
+    pointer-events: none;
+    z-index: 9998;
+  }
+
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: #1A0A0A; }
+  ::-webkit-scrollbar-thumb { background: #C0392B44; border-radius: 2px; }
+}
+
+@layer components {
+  .terminal-border {
+    border: 1px solid #C0392B44;
+    box-shadow: 0 0 12px #C0392B22, inset 0 0 12px #0D040411;
+  }
+
+  .terminal-border-amber {
+    border: 1px solid #F39C1244;
+    box-shadow: 0 0 12px #F39C1222;
+  }
+
+  .panel-bg {
+    background: linear-gradient(135deg, #1A0A0A 0%, #1E0E0E 50%, #170808 100%);
+  }
+
+  .glow-red  { text-shadow: 0 0 8px #C0392B, 0 0 20px #C0392B66; }
+  .glow-amber { text-shadow: 0 0 8px #F39C12, 0 0 20px #F39C1266; }
+  .glow-cyan  { text-shadow: 0 0 8px #5DADE2, 0 0 20px #5DADE266; }
+
+  .btn-terminal {
+    @apply font-mono text-xs tracking-widest uppercase px-4 py-2;
+    border: 1px solid #C0392B66;
+    background: transparent;
+    color: #C0392B;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .btn-terminal::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: #C0392B;
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.15s;
+    z-index: 0;
+  }
+  .btn-terminal:hover::before { transform: scaleX(1); }
+  .btn-terminal:hover { color: #0D0404; }
+  .btn-terminal span { position: relative; z-index: 1; }
+
+  .slot-target {
+    border: 1px dashed #C0392B55;
+    transition: all 0.2s;
+  }
+  .slot-target.over {
+    border-color: #F39C12;
+    box-shadow: 0 0 16px #F39C1244;
+    background: #F39C1208;
+  }
+  .slot-target.correct {
+    border-color: #00FF8888;
+    box-shadow: 0 0 20px #00FF8844;
+    background: #00FF8808;
+  }
+  .slot-target.incorrect {
+    border-color: #C0392B;
+    box-shadow: 0 0 16px #C0392B66;
+    animation: glitch 0.3s ease forwards;
+  }
+}
