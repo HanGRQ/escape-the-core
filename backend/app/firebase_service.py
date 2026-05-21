@@ -53,66 +53,75 @@ def _get_db() -> firestore.Client:
 # ── Session CRUD ──────────────────────────────────────────────────────────────
 
 def create_session(session: SessionState) -> None:
-    db = _get_db()
-    doc = _session_to_dict(session)
-    db.collection("users").document(session.user_id) \
-      .collection("game_progress").document(session.session_id) \
-      .set(doc)
+    try:
+        db = _get_db()
+        doc = _session_to_dict(session)
+        db.collection("users").document(session.user_id) \
+          .collection("game_progress").document(session.session_id) \
+          .set(doc)
+    except Exception:
+        pass
 
 
 def load_session(user_id: str, session_id: str) -> Optional[SessionState]:
-    db = _get_db()
-    snap = db.collection("users").document(user_id) \
-              .collection("game_progress").document(session_id) \
-              .get()
-    if not snap.exists:
-        return None
-    return _dict_to_session(snap.to_dict())
+    try:
+        db = _get_db()
+        snap = db.collection("users").document(user_id) \
+                  .collection("game_progress").document(session_id) \
+                  .get()
+        if not snap.exists:
+            return None
+        return _dict_to_session(snap.to_dict())
+    except Exception:
+        return None  # Firestore unavailable — caller falls back to in-memory
 
 
 def save_session(session: SessionState) -> None:
-    db = _get_db()
-    doc = _session_to_dict(session)
-    db.collection("users").document(session.user_id) \
-      .collection("game_progress").document(session.session_id) \
-      .set(doc, merge=True)
+    try:
+        db = _get_db()
+        doc = _session_to_dict(session)
+        db.collection("users").document(session.user_id) \
+          .collection("game_progress").document(session.session_id) \
+          .set(doc, merge=True)
+    except Exception:
+        pass  # Firestore unavailable — session kept in memory
 
 
 def get_user_sessions(user_id: str) -> list[dict]:
-    db = _get_db()
-    snaps = db.collection("users").document(user_id) \
-               .collection("game_progress").stream()
-    return [s.to_dict() for s in snaps]
+    try:
+        db = _get_db()
+        snaps = db.collection("users").document(user_id) \
+                   .collection("game_progress").stream()
+        return [s.to_dict() for s in snaps]
+    except Exception:
+        return []
 
 
 # ── DDA event batch-write (called at room completion) ─────────────────────────
 
 def flush_dda_events(session: SessionState, room_id: str) -> None:
-    """
-    Writes the full DDA history for a room to Firestore in one batch operation.
-    GDD §8.2: batch at room completion, not per-attempt.
-    """
-    db = _get_db()
-    room = session.rooms.get(room_id)
-    if not room:
-        return
-
-    events = [
-        {
-            "attempt":     i + 1,
-            "is_correct":  r.is_correct,
-            "time_ms":     r.time_taken_ms,
-            "answer":      r.answer_given,
-            "dda_state":   r.dda_state,
-            "timestamp":   r.timestamp,
-        }
-        for i, r in enumerate(room.history)
-    ]
-
-    db.collection("users").document(session.user_id) \
-      .collection("game_progress").document(session.session_id) \
-      .collection("dda_events").document(room_id) \
-      .set({"room_id": room_id, "events": events})
+    try:
+        db = _get_db()
+        room = session.rooms.get(room_id)
+        if not room:
+            return
+        events = [
+            {
+                "attempt":    i + 1,
+                "is_correct": r.is_correct,
+                "time_ms":    r.time_taken_ms,
+                "answer":     r.answer_given,
+                "dda_state":  r.dda_state,
+                "timestamp":  r.timestamp,
+            }
+            for i, r in enumerate(room.history)
+        ]
+        db.collection("users").document(session.user_id) \
+          .collection("game_progress").document(session.session_id) \
+          .collection("dda_events").document(room_id) \
+          .set({"room_id": room_id, "events": events})
+    except Exception:
+        pass  # Firestore unavailable
 
 
 # ── Serialisation helpers ─────────────────────────────────────────────────────

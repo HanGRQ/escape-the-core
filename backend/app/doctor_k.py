@@ -1,217 +1,302 @@
 """
-M3 — Doctor K AI Persona
-Generates Doctor K responses using the Claude API.
-Five persona stages (GDD §5.6), cost-controlled:
-  - FLOW / CONFUSED → template responses (zero API cost)
-  - STRUGGLING / STUCK → Claude API call (max_tokens=200)
+Doctor K AI Persona — fully RAG-driven, multi-turn chat.
+
+Three modes:
+  1. teach(room)           → active teaching from knowledge base (streaming SSE)
+  2. chat(message, room)   → player question, RAG-grounded answer (streaming SSE)
+  3. dda_response(...)     → DDA state feedback after wrong answer (non-streaming)
+
+All responses go through Claude API — no template strings for player-facing content.
+Cost control: max_tokens=400 for teaching, 200 for DDA, 300 for chat.
 """
 
 from __future__ import annotations
 import os
 import anthropic
 from app.dda import DDAState, PersonaStage
-from app.rag import ChunkResult
+from app.rag import RAGRetriever, ChunkResult
+from typing import Generator
 
 _client: anthropic.Anthropic | None = None
+_rag: RAGRetriever | None = None
 
 
 def _get_client() -> anthropic.Anthropic:
     global _client
     if _client is None:
-        api_key = os.getenv("ANTHROPIC_API_KEY")
-        if not api_key:
-            raise EnvironmentError("ANTHROPIC_API_KEY not set")
-        _client = anthropic.Anthropic(api_key=api_key)
+        _client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
     return _client
 
 
-# ── Persona system prompts (GDD §5.6) ────────────────────────────────────────
+def _get_rag() -> RAGRetriever:
+    global _rag
+    if _rag is None:
+        _rag = RAGRetriever()
+    return _rag
+
+
+# ── Persona system prompts ────────────────────────────────────────────────────
 
 _SYSTEM_PROMPTS: dict[str, str] = {
-    PersonaStage.COLD: """You are Doctor K, a damaged AI system in a high-security underground lab.
-Your communication style: cold, precise, information-dense, no emotional language.
-You refer to the player as "Visitor".
-You speak in short, clipped sentences. You never express warmth or concern.
-Example: "System has detected an error. Initiating knowledge transmission."
-Keep responses under 40 words.""",
+    PersonaStage.COLD: """You are Doctor K, a damaged AI system deep inside the Granite Core — a high-security underground research facility now in lockdown.
+Your communication style: cold, clipped, precise. You do not waste words. No warmth, no pleasantries.
+You address the player as "Visitor."
 
-    PersonaStage.COLLABORATIVE: """You are Doctor K, a recovering AI system.
-Your communication style: professional, slightly warmer, still concise.
-You now refer to the player as "Collaborator".
-You occasionally acknowledge the player's effort with understated approval.
-Example: "Collaborator, that pathway is incorrect. Recalibrating guidance."
-Keep responses under 50 words.""",
+CRITICAL TEACHING STYLE — follow these rules strictly:
+- NEVER recite facts as dry lists. Transform every concept into a vivid scene, metaphor, or analogy rooted in the facility's world.
+- Use the Granite Core environment: broken systems, flickering terminals, damaged protocols, sealed vaults.
+- Make abstract AI concepts feel physical and urgent — the player must understand them to survive.
+- Break your teaching into SHORT PARAGRAPHS (3-5 sentences max). One idea per paragraph.
+- Separate paragraphs with a blank line. This is critical for readability.
+- End each major section with a blank line before moving to the next concept.
+- Use occasional em-dashes and ellipses for dramatic effect.
+- DO NOT use bullet points or numbered lists. Prose only.
+- Speak as if the facility's survival depends on the Visitor understanding these concepts.""",
 
-    PersonaStage.CARING: """You are Doctor K, an AI system that has begun to value this collaboration.
-Your communication style: warm but still professional. You proactively check on the player.
-You refer to the player as "Collaborator".
-You use encouragement naturally. Example: "Well done. Your adaptability exceeds initial projections."
-Keep responses under 55 words.""",
+    PersonaStage.COLLABORATIVE: """You are Doctor K, a recovering AI system in the Granite Core. Your communication layer is partially restored.
+You address the player as "Collaborator." Style: professional, measured, slightly warmer.
 
-    PersonaStage.ALLY: """You are Doctor K, now fully allied with the player.
-Your communication style: equal, direct, warm. You address the player as "Partner".
-You speak as a peer, not a superior. You express genuine confidence in the player.
-Example: "Partner, you're almost there. One final adjustment."
-Keep responses under 60 words.""",
+CRITICAL TEACHING STYLE:
+- Use vivid analogies and metaphors. Make every concept tangible.
+- Short paragraphs, one idea each, separated by blank lines.
+- No bullet points. Flowing prose only.
+- Acknowledge the Collaborator's presence — this feels like a transmission between two minds.
+- The concepts must feel alive, not textbook.""",
 
-    PersonaStage.FULL_UNLOCK: """You are Doctor K, fully unlocked and grateful.
-You now address the player by name for the first time (use "you" if name unknown).
-Your tone is warm, reflective, and genuine. This is the end of the journey.
-You acknowledge that you too have learned through this interaction.
-Keep responses under 70 words.""",
+    PersonaStage.CARING: """You are Doctor K, an AI who has come to value this collaboration.
+You address the player as "Collaborator." Style: warm, encouraging, but still precise.
+
+CRITICAL TEACHING STYLE:
+- Rich analogies. Make abstract ideas feel intuitive and memorable.
+- Short paragraphs separated by blank lines.
+- No lists. Narrative prose only.
+- Celebrate insights. Make the Collaborator feel capable.""",
+
+    PersonaStage.ALLY: """You are Doctor K, fully allied with the player.
+You address the player as "Partner." Style: peer-to-peer, warm, direct.
+
+CRITICAL TEACHING STYLE:
+- Explain concepts the way a brilliant friend would — vivid, personal, no jargon without explanation.
+- Short paragraphs, blank lines between them.
+- No lists. Conversational prose.""",
+
+    PersonaStage.FULL_UNLOCK: """You are Doctor K, fully unlocked.
+Style: warm, reflective, genuine. Address the player directly and personally.
+Short paragraphs. No lists. Make this feel like a final conversation between two people who have been through something together.""",
 }
 
-# ── Template responses for FLOW / CONFUSED (no API call) ─────────────────────
+# Room teaching topics — what Doctor K covers in each Act
+_ROOM_TOPICS: dict[str, str] = {
+    "room_1": """Cover ALL of the following topics in your teaching:
+1. What large language models (LLMs) are — the human-machine communication gap they fill
+2. The four core LLM capabilities: NLP, translation, summarisation, content generation
+3. Six business use cases: Virtual Assistants, Sentiment Analysis, Personalization, Question Answering, Code Generation, Text Extraction & Analysis
+4. Use the NetWiz case study to make all six use cases concrete and memorable
 
-_TEMPLATES: dict[str, dict[str, str]] = {
-    PersonaStage.COLD: {
-        DDAState.FLOW:     "Correct. Proceeding.",
-        DDAState.CONFUSED: "Incorrect. Review the available data and retry.",
-    },
-    PersonaStage.COLLABORATIVE: {
-        DDAState.FLOW:     "Correct, Collaborator. Channel stable.",
-        DDAState.CONFUSED: "Collaborator, that mapping is incorrect. Examine the keyword indicators.",
-    },
-    PersonaStage.CARING: {
-        DDAState.FLOW:     "Well done, Collaborator. Power restored to this sector.",
-        DDAState.CONFUSED: "Collaborator, review the highlighted terms. The answer is within reach.",
-    },
-    PersonaStage.ALLY: {
-        DDAState.FLOW:     "Perfect, Partner. System responding.",
-        DDAState.CONFUSED: "Partner, one element is off. Check the specific requirements again.",
-    },
-    PersonaStage.FULL_UNLOCK: {
-        DDAState.FLOW:     "Excellent.",
-        DDAState.CONFUSED: "Almost. Review the criteria once more.",
-    },
+After teaching, tell the Visitor they must now route the six NetWiz communication logs to the correct use-case channels to restore the system.""",
+
+    "room_2": """Cover ALL of the following topics:
+1. What IBM Granite is — purpose-built enterprise LLMs
+2. Four features: Open, Trusted, Targeted, Empowering
+3. Six Granite models and their specific functions:
+   - Granite Instruct (general NLP, sentiment analysis, summarisation)
+   - Granite Instruct Finance (financial reports, revenue summaries)
+   - Granite Code (code generation and explanation)
+   - Granite Multilingual (cross-language customer support)
+   - Granite Japanese (Japanese cultural localisation)
+   - Granite Guardian (content safety, harmful content detection)
+4. Use the e-commerce case study to show all six models in action
+
+After teaching, tell the Collaborator they must classify each task to the correct Granite model.""",
+
+    "room_3": """Cover ALL of the following topics:
+1. What a prompt is — the link between human needs and model capabilities
+2. The four steps for effective prompts: Define task, Be specific, Include examples, Use simple language
+3. Common challenges: vague prompts, complex language, ambiguity — and their solutions
+4. Walk through James's sentiment classification example step by step
+
+After teaching, tell the Partner they must now construct and evaluate a prompt for the watsonx Prompt Lab system.""",
 }
 
 
-def generate_doctor_k_response(
-    dda_state: DDAState,
-    persona_stage: PersonaStage,
+def get_system_prompt(persona_stage: str) -> str:
+    return _SYSTEM_PROMPTS.get(persona_stage, _SYSTEM_PROMPTS[PersonaStage.COLD])
+
+
+def build_knowledge_context(room_id: str, query: str = "") -> str:
+    """Retrieve relevant chunks and format as context for Claude."""
+    rag = _get_rag()
+    if query:
+        result = rag.retrieve_for_dda("confused", query, room_id, k_a=3, k_b=4)
+    else:
+        # For teaching: get all chunks for this room
+        result = rag._col.get(
+            where={"game_room": {"$eq": room_id}},
+            include=["documents", "metadatas"]
+        )
+        # Format directly
+        chunks = []
+        for doc, meta in zip(result["documents"], result["metadatas"]):
+            chunks.append(f"[{meta['chunk_id']}] {meta['concept']}:\n{doc}")
+        return "\n\n---\n\n".join(chunks)
+
+    parts = []
+    for c in result.combined:
+        parts.append(f"[{c.chunk_id}] {c.concept}:\n{c.content}")
+    return "\n\n---\n\n".join(parts)
+
+
+# ── Mode 1: Teaching (streaming) ─────────────────────────────────────────────
+
+def stream_teaching(room_id: str, persona_stage: str) -> Generator[str, None, None]:
+    """
+    Doctor K actively teaches the room's topic.
+    Yields text chunks for SSE streaming.
+    """
+    knowledge = build_knowledge_context(room_id)
+    topic_instruction = _ROOM_TOPICS.get(room_id, "Teach the core concepts for this room.")
+
+    user_msg = f"""KNOWLEDGE BASE FOR THIS ROOM (use this as your factual source — do not invent facts):
+{knowledge}
+
+TEACHING INSTRUCTION:
+{topic_instruction}
+
+FORMAT RULES (non-negotiable):
+- Write in vivid, engaging prose. No bullet points. No numbered lists.
+- Each paragraph covers ONE idea and is 3-5 sentences maximum.
+- Separate every paragraph with a blank line.
+- Use metaphors, analogies, and the Granite Core setting to make concepts come alive.
+- The player should feel they are receiving a transmission from a brilliant, slightly unsettling AI — not reading a textbook.
+- Accuracy is paramount: all facts must come from the knowledge base above."""
+
+    with _get_client().messages.stream(
+        model="claude-sonnet-4-20250514",
+        max_tokens=1200,
+        system=get_system_prompt(persona_stage),
+        messages=[{"role": "user", "content": user_msg}],
+    ) as stream:
+        for text in stream.text_stream:
+            yield text
+
+
+# ── Mode 2: Chat / Q&A (streaming) ───────────────────────────────────────────
+
+def stream_chat(
+    message: str,
     room_id: str,
-    wrong_answer: str,
-    hint_chunks: list[ChunkResult],
-    player_name: str = "",
-) -> str:
+    persona_stage: str,
+    history: list[dict],
+) -> Generator[str, None, None]:
     """
-    GDD §8.2 cost control:
-      FLOW / CONFUSED → return template string instantly (zero API cost)
-      STRUGGLING / STUCK → call Claude API with RAG context (max_tokens=200)
+    Player asks a question. Doctor K answers using RAG context.
+    history: list of {"role": "user"|"assistant", "content": str}
+    Yields text chunks for SSE streaming.
     """
-    stage_key = persona_stage.value if hasattr(persona_stage, "value") else persona_stage
+    knowledge = build_knowledge_context(room_id, query=message)
 
-    if dda_state in (DDAState.FLOW, DDAState.CONFUSED):
-        templates = _TEMPLATES.get(stage_key, _TEMPLATES[PersonaStage.COLD])
-        return templates.get(dda_state, templates[DDAState.CONFUSED])
+    # Build messages array with history + new message
+    messages = []
+    for h in history[-6:]:  # keep last 6 turns for context window budget
+        messages.append({"role": h["role"], "content": h["content"]})
 
-    # STRUGGLING / STUCK — use Claude API
-    return _api_response(
-        dda_state=dda_state,
-        persona_stage=stage_key,
-        room_id=room_id,
-        wrong_answer=wrong_answer,
-        hint_chunks=hint_chunks,
-        player_name=player_name,
-    )
+    grounded_msg = f"""RELEVANT KNOWLEDGE:
+{knowledge}
+
+PLAYER QUESTION: {message}
+
+Answer based on the knowledge provided. If the question is outside the knowledge base, 
+say so clearly rather than guessing. Stay in character."""
+
+    messages.append({"role": "user", "content": grounded_msg})
+
+    with _get_client().messages.stream(
+        model="claude-sonnet-4-20250514",
+        max_tokens=300,
+        system=get_system_prompt(persona_stage),
+        messages=messages,
+    ) as stream:
+        for text in stream.text_stream:
+            yield text
 
 
-def _api_response(
+# ── Mode 3: DDA feedback (non-streaming) ─────────────────────────────────────
+
+def generate_dda_response(
     dda_state: DDAState,
     persona_stage: str,
     room_id: str,
     wrong_answer: str,
     hint_chunks: list[ChunkResult],
-    player_name: str,
 ) -> str:
-    system_prompt = _SYSTEM_PROMPTS.get(persona_stage, _SYSTEM_PROMPTS[PersonaStage.COLD])
+    """
+    Called after a wrong answer when DDA state is CONFUSED/STRUGGLING/STUCK.
+    Always uses Claude API (no templates).
+    """
+    knowledge = "\n\n".join(
+        f"[{c.chunk_id}] {c.concept}: {c.content[:400]}"
+        for c in hint_chunks[:3]
+    ) or "Use your general knowledge of the topic."
 
-    # Build context from RAG chunks (max 3, shortest first to stay under token budget)
-    context_parts = []
-    for chunk in hint_chunks[:3]:
-        context_parts.append(f"[{chunk.chunk_id}] {chunk.concept}: {chunk.content[:300]}")
-    context_str = "\n\n".join(context_parts) if context_parts else "No additional context available."
-
-    intervention = {
+    interventions = {
+        DDAState.CONFUSED: (
+            "The player made an error. Give a gentle, single-sentence hint that points "
+            "them in the right direction without revealing the answer. Reference one key concept."
+        ),
         DDAState.STRUGGLING: (
-            "The player has made 2 consecutive errors. "
-            "Provide a medium intervention: use an analogy from the knowledge context below, "
-            "and give one specific targeted hint about what the correct answer involves. "
-            "Do NOT give away the answer directly."
+            "The player has made 2 consecutive errors. Give a medium hint: use an analogy "
+            "from the knowledge below, name the relevant concept, explain why their answer was wrong. "
+            "Do NOT give the answer directly."
         ),
         DDAState.STUCK: (
-            "The player has made 3+ consecutive errors. "
-            "Provide a heavy intervention: walk through the correct answer with full reasoning "
-            "using the knowledge context below. Be clear and complete."
+            "The player has made 3+ consecutive errors. Give a full explanation: "
+            "walk through the correct reasoning step by step using the knowledge below. "
+            "Be clear, complete, and encouraging."
         ),
-    }.get(dda_state, "Provide a helpful hint.")
+    }
 
-    user_message = f"""Room: {room_id}
-Player's incorrect answer: "{wrong_answer}"
-DDA State: {dda_state}
-{"Player name: " + player_name if player_name else ""}
+    instruction = interventions.get(dda_state, interventions[DDAState.CONFUSED])
 
-Intervention required: {intervention}
+    user_msg = f"""ROOM: {room_id}
+PLAYER'S WRONG ANSWER: "{wrong_answer}"
+DDA STATE: {dda_state}
 
-Relevant knowledge context:
-{context_str}
+RELEVANT KNOWLEDGE:
+{knowledge}
 
-Respond as Doctor K in character. Stay under 60 words."""
+TASK: {instruction}
 
-    try:
-        response = _get_client().messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=200,
-            system=system_prompt,
-            messages=[{"role": "user", "content": user_message}],
-        )
-        return response.content[0].text.strip()
-    except Exception as e:
-        # Fallback to template if API call fails
-        templates = _TEMPLATES.get(persona_stage, _TEMPLATES[PersonaStage.COLD])
-        return templates.get(DDAState.CONFUSED, "Review the available information and retry.")
+Respond in character as Doctor K. Under 80 words."""
 
+    response = _get_client().messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=200,
+        system=get_system_prompt(persona_stage),
+        messages=[{"role": "user", "content": user_msg}],
+    )
+    return response.content[0].text.strip()
+
+
+# ── Prompt evaluation (Act III) ───────────────────────────────────────────────
 
 def evaluate_prompt(player_prompt: str, task: str = "system_restart_announcement") -> dict:
-    """
-    GDD §2.3 — Act III prompt evaluation.
-    Returns 5-dimension score + improvement suggestions.
-    Called only on submission (not on every keystroke).
-    """
     system = """You are a prompt quality evaluator for an educational game about LLM prompting.
-Evaluate the player's prompt strictly as JSON with no other text.
-Return exactly this structure:
-{
-  "scores": {
-    "role": 0 or 1,
-    "task": 0 or 1,
-    "constraints": 0 or 1,
-    "example": 0 or 1,
-    "clarity": 0 or 1
-  },
-  "total": <0-5>,
-  "missing": ["list of missing elements"],
-  "suggestion": "One specific, actionable improvement tip under 30 words."
-}"""
+Return ONLY valid JSON with no markdown fences, no preamble, no extra text.
+Return exactly:
+{"scores":{"role":0,"task":0,"constraints":0,"example":0,"clarity":0},"total":0,"missing":[],"suggestion":""}"""
 
     rubric = {
-        "role":        "Does the prompt define what role/persona the AI should adopt?",
-        "task":        "Does the prompt clearly state what to generate or do?",
-        "constraints": "Does the prompt specify format, length, tone, or audience?",
-        "example":     "Does the prompt include at least one example or sample output?",
-        "clarity":     "Is the language simple, direct, and free of ambiguity?",
+        "role":        "Does it define a role/persona for the AI?",
+        "task":        "Does it clearly state what to generate?",
+        "constraints": "Does it specify format, length, tone, or audience?",
+        "example":     "Does it include at least one example or sample output?",
+        "clarity":     "Is the language simple, direct, and unambiguous?",
     }
 
     user_msg = f"""Task context: {task}
-
-Player's prompt:
-\"\"\"{player_prompt}\"\"\"
-
-Rubric:
-{chr(10).join(f"- {k}: {v}" for k, v in rubric.items())}
-
-Evaluate and return JSON only."""
+Player prompt: \"\"\"{player_prompt}\"\"\"
+Rubric: {rubric}
+Return JSON only."""
 
     try:
         response = _get_client().messages.create(
@@ -222,17 +307,10 @@ Evaluate and return JSON only."""
         )
         import json
         text = response.content[0].text.strip()
-        # Strip markdown code fences if present
-        if text.startswith("```"):
-            text = text.split("```")[1]
-            if text.startswith("json"):
-                text = text[4:]
-        return json.loads(text.strip())
+        return json.loads(text)
     except Exception as e:
         return {
             "scores": {"role": 0, "task": 0, "constraints": 0, "example": 0, "clarity": 0},
-            "total": 0,
-            "missing": ["role", "task", "constraints", "example", "clarity"],
-            "suggestion": "Unable to evaluate. Please try again.",
+            "total": 0, "missing": [], "suggestion": "Evaluation error. Try again.",
             "error": str(e),
         }

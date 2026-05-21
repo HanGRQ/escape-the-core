@@ -1,32 +1,42 @@
 """
-M3 — FastAPI Backend
-All endpoints from GDD §6.2, wired to DDA engine + RAG + Doctor K + Firebase.
-
-Run:
-    cd escape-the-core/backend
-    uvicorn app.main:app --reload --port 8000
+FastAPI Backend v2.1 — Firebase-optional.
+Teaching and chat work without Firebase.
+Session-dependent endpoints (submit, complete, quiz) gracefully degrade.
 """
 
 from __future__ import annotations
-import os
-import uuid
+import os, uuid
 from dotenv import load_dotenv
 load_dotenv()
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from typing import Optional
+import json
 
 from app.dda import DDAEngine, DDAState, PersonaStage, SessionState
 from app.rag import RAGRetriever
-from app.doctor_k import generate_doctor_k_response, evaluate_prompt
-from app.firebase_service import (
-    create_session, load_session, save_session,
-    flush_dda_events, get_user_sessions,
-)
+from app.doctor_k import stream_teaching, stream_chat, generate_dda_response, evaluate_prompt
 
-app = FastAPI(title="Escape the Core — Backend API", version="1.0.0")
+# Firebase is optional — import defensively
+_firebase_available = False
+try:
+    from app.firebase_service import (
+        create_session, load_session, save_session,
+        flush_dda_events, get_user_sessions,
+    )
+    _firebase_available = True
+except Exception as _fb_err:
+    print(f"[INFO] Firebase not configured ({_fb_err}) — running in offline mode.")
+    def create_session(s): pass
+    def load_session(uid, sid): return None
+    def save_session(s): pass
+    def flush_dda_events(s, r): pass
+    def get_user_sessions(uid): return []
+
+app = FastAPI(title="Escape the Core API", version="2.1.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -35,10 +45,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Singletons (initialised once at startup)
-_dda     = DDAEngine()
+_dda = DDAEngine()
 _rag: RAGRetriever | None = None
 
+# In-memory session store (used when Firebase is offline)
+_mem_sessions: dict[str, SessionState] = {}
 
 def get_rag() -> RAGRetriever:
     global _rag
@@ -47,125 +58,158 @@ def get_rag() -> RAGRetriever:
     return _rag
 
 
-# ── Request / Response models ─────────────────────────────────────────────────
+# ── Pydantic models ────────────────────────────────────────────────────────────
 
 class StartSessionRequest(BaseModel):
     user_id: str
     player_name: Optional[str] = ""
 
-class StartSessionResponse(BaseModel):
-    session_id:    str
-    current_room:  str
-    persona_stage: str
-    message:       str           # Doctor K opening line
-
 class SubmitAnswerRequest(BaseModel):
-    session_id:    str
-    user_id:       str
-    is_correct:    bool
+    session_id: str
+    user_id: str
+    is_correct: bool
     time_taken_ms: int
-    answer_given:  str
-    player_name:   Optional[str] = ""
+    answer_given: str
 
-class SubmitAnswerResponse(BaseModel):
-    dda_state:      str
-    show_scaffold:  bool
-    doctor_k_msg:   str
-    persona_stage:  str
-    hint_chunk_ids: list[str]
-
-class HintResponse(BaseModel):
-    dda_state:     str
-    doctor_k_msg:  str
-    hint_chunks:   list[dict]
+class ChatRequest(BaseModel):
+    session_id: str
+    user_id: str
+    message: str
+    history: Optional[list[dict]] = []
+    persona: Optional[str] = "cold"   # fallback if session unavailable
 
 class CompleteRoomRequest(BaseModel):
     session_id: str
-    user_id:    str
-    score:      float
-
-class CompleteRoomResponse(BaseModel):
-    next_room:     str
-    persona_stage: str
-    doctor_k_msg:  str
+    user_id: str
+    score: float
 
 class EvaluatePromptRequest(BaseModel):
     session_id: str
-    user_id:    str
-    prompt:     str
-    task:       Optional[str] = "system_restart_announcement"
+    user_id: str
+    prompt: str
+    task: Optional[str] = "system_restart_announcement"
 
 class SubmitQuizRequest(BaseModel):
     session_id: str
-    user_id:    str
-    answers:    list[dict]       # [{question_id, selected, correct}]
-    score:      float            # 0.0–1.0 (e.g. 9/12 = 0.75)
-
-class ProgressResponse(BaseModel):
-    session_id:     str
-    current_room:   str
-    persona_stage:  str
-    rooms:          dict
-    quiz_completed: bool
-    quiz_score:     Optional[float]
-    certificate:    bool
+    user_id: str
+    answers: list[dict]
+    score: float
 
 
-# ── Opening lines per persona (GDD §5.6) ─────────────────────────────────────
+# ── SSE helpers ────────────────────────────────────────────────────────────────
 
-_OPENING_LINES: dict[str, str] = {
-    PersonaStage.COLD:
-        "System has detected an intruder. Initiating protocol transmission. "
-        "The facility is in lockdown. You must repair the AI Dispatch Protocol to escape.",
-    PersonaStage.COLLABORATIVE:
-        "Collaborator, channel restored. Previous session data recovered. Proceeding to next sector.",
-    PersonaStage.CARING:
-        "Collaborator, welcome back. Your progress has been retained. Continue when ready.",
-    PersonaStage.ALLY:
-        "Partner. Good to have you back. The final sequence awaits.",
-    PersonaStage.FULL_UNLOCK:
-        "You have returned. The certification record is preserved. Proceed.",
-}
+def sse_event(data: str) -> str:
+    return f"event: message\ndata: {json.dumps(data)}\n\n"
+
+def sse_done() -> str:
+    return "event: done\ndata: {}\n\n"
+
+def sse_error(msg: str) -> str:
+    return f"event: error\ndata: {json.dumps({'error': msg})}\n\n"
+
+SSE_HEADERS = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
 
 
-# ── Endpoints ─────────────────────────────────────────────────────────────────
+# ── Session helpers ────────────────────────────────────────────────────────────
 
-@app.post("/api/session/start", response_model=StartSessionResponse)
+def _get_session(user_id: str, session_id: str) -> Optional[SessionState]:
+    """Load from Firebase, fall back to in-memory store."""
+    session = load_session(user_id, session_id)
+    if session:
+        return session
+    return _mem_sessions.get(session_id)
+
+def _save(session: SessionState):
+    _mem_sessions[session.session_id] = session
+    try:
+        save_session(session)
+    except Exception:
+        pass  # Firebase unavailable — in-memory is fine for this session
+
+def _get_persona(user_id: str, session_id: str, fallback: str = "cold") -> str:
+    s = _get_session(user_id, session_id)
+    return s.persona_stage if s else fallback
+
+
+# ── Streaming endpoints (Firebase-independent) ─────────────────────────────────
+
+@app.get("/api/room/{room_id}/teach")
+def teach_room(
+    room_id: str,
+    session_id: str,
+    user_id: str,
+    persona: Optional[str] = "cold",
+):
+    """SSE — Doctor K teaches. Works with or without Firebase."""
+    persona_stage = _get_persona(user_id, session_id, persona)
+
+    def generate():
+        try:
+            for chunk in stream_teaching(room_id, persona_stage):
+                yield sse_event(chunk)
+            yield sse_done()
+        except Exception as e:
+            yield sse_error(str(e))
+
+    return StreamingResponse(generate(), media_type="text/event-stream", headers=SSE_HEADERS)
+
+
+@app.post("/api/room/{room_id}/chat")
+def chat_with_doctor_k(room_id: str, req: ChatRequest):
+    """SSE — Player Q&A with Doctor K. Works with or without Firebase."""
+    persona_stage = _get_persona(req.user_id, req.session_id, req.persona or "cold")
+
+    def generate():
+        try:
+            for chunk in stream_chat(
+                message=req.message,
+                room_id=room_id,
+                persona_stage=persona_stage,
+                history=req.history or [],
+            ):
+                yield sse_event(chunk)
+            yield sse_done()
+        except Exception as e:
+            yield sse_error(str(e))
+
+    return StreamingResponse(generate(), media_type="text/event-stream", headers=SSE_HEADERS)
+
+
+# ── Session endpoints ──────────────────────────────────────────────────────────
+
+@app.post("/api/session/start")
 def start_session(req: StartSessionRequest):
-    """
-    GDD §6.2 — POST /api/session/start
-    Creates new session or resumes the most recent incomplete session.
-    """
+    # Try Firebase first
     existing = get_user_sessions(req.user_id)
-    incomplete = [s for s in existing if not s.get("certificate") and not s.get("quiz_completed")]
+    incomplete = [s for s in existing if not s.get("certificate")]
 
     if incomplete:
-        # Resume most recent
         latest = max(incomplete, key=lambda s: s.get("session_id", ""))
         session = load_session(req.user_id, latest["session_id"])
-        opening = _personalised_opening(session)
-    else:
-        session = SessionState(
-            session_id=str(uuid.uuid4()),
-            user_id=req.user_id,
-        )
-        create_session(session)
-        opening = _OPENING_LINES[PersonaStage.COLD]
+        if session:
+            return {"session_id": session.session_id,
+                    "current_room": session.current_room,
+                    "persona_stage": session.persona_stage}
 
-    return StartSessionResponse(
-        session_id=session.session_id,
-        current_room=session.current_room,
-        persona_stage=session.persona_stage,
-        message=opening,
-    )
+    # Create new session (works offline too — stored in _mem_sessions)
+    session = SessionState(session_id=str(uuid.uuid4()), user_id=req.user_id)
+    _save(session)
+
+    return {
+        "session_id":    session.session_id,
+        "current_room":  session.current_room,
+        "persona_stage": session.persona_stage,
+    }
 
 
-@app.post("/api/room/{room_id}/submit", response_model=SubmitAnswerResponse)
+@app.post("/api/room/{room_id}/submit")
 def submit_answer(room_id: str, req: SubmitAnswerRequest):
-    """GDD §6.2 — POST /api/room/{id}/submit"""
-    session = _load_or_404(req.user_id, req.session_id)
-    rag = get_rag()
+    session = _get_session(req.user_id, req.session_id)
+    if not session:
+        # Create ephemeral session so the game still works
+        session = SessionState(session_id=req.session_id, user_id=req.user_id)
 
+    rag = get_rag()
     new_state, show_scaffold = _dda.process_attempt(
         session=session,
         room_id=room_id,
@@ -174,181 +218,103 @@ def submit_answer(room_id: str, req: SubmitAnswerRequest):
         answer_given=req.answer_given,
     )
 
-    # Retrieve hint chunks for STRUGGLING / STUCK (RAG call)
     hint_chunks = []
-    if new_state in (DDAState.STRUGGLING, DDAState.STUCK):
+    doctor_k_msg = ""
+
+    if not req.is_correct:
         result = rag.retrieve_for_dda(
             player_state=new_state.lower(),
             wrong_answer=req.answer_given,
             room=room_id,
         )
         hint_chunks = result.combined
+        doctor_k_msg = generate_dda_response(
+            dda_state=new_state,
+            persona_stage=session.persona_stage,
+            room_id=room_id,
+            wrong_answer=req.answer_given,
+            hint_chunks=hint_chunks,
+        )
 
-    doctor_k_msg = generate_doctor_k_response(
-        dda_state=new_state,
-        persona_stage=session.persona_stage,
-        room_id=room_id,
-        wrong_answer=req.answer_given,
-        hint_chunks=hint_chunks,
-        player_name=req.player_name or "",
-    )
+    _save(session)
 
-    save_session(session)
-
-    return SubmitAnswerResponse(
-        dda_state=new_state,
-        show_scaffold=show_scaffold,
-        doctor_k_msg=doctor_k_msg,
-        persona_stage=session.persona_stage,
-        hint_chunk_ids=[c.chunk_id for c in hint_chunks],
-    )
+    return {
+        "dda_state":      new_state,
+        "show_scaffold":  show_scaffold,
+        "doctor_k_msg":   doctor_k_msg,
+        "persona_stage":  session.persona_stage,
+        "hint_chunk_ids": [c.chunk_id for c in hint_chunks],
+    }
 
 
-@app.get("/api/room/{room_id}/hint", response_model=HintResponse)
+@app.get("/api/room/{room_id}/hint")
 def get_hint(room_id: str, session_id: str, user_id: str):
-    """GDD §6.2 — GET /api/room/{id}/hint (player clicked Hint button)"""
-    session = _load_or_404(user_id, session_id)
+    session = _get_session(user_id, session_id)
+    if not session:
+        session = SessionState(session_id=session_id, user_id=user_id)
     rag = get_rag()
-
     new_state = _dda.set_help_requested(session, room_id)
-
-    result = rag.retrieve_for_dda(
-        player_state="confused",
-        wrong_answer="player requested hint",
-        room=room_id,
-    )
-
-    doctor_k_msg = generate_doctor_k_response(
+    result = rag.retrieve_for_dda("confused", "player requested hint", room_id)
+    doctor_k_msg = generate_dda_response(
         dda_state=DDAState.CONFUSED,
         persona_stage=session.persona_stage,
         room_id=room_id,
         wrong_answer="",
         hint_chunks=result.combined,
     )
-
-    save_session(session)
-
-    return HintResponse(
-        dda_state=new_state,
-        doctor_k_msg=doctor_k_msg,
-        hint_chunks=[
-            {"chunk_id": c.chunk_id, "concept": c.concept, "content": c.content}
-            for c in result.combined[:2]
-        ],
-    )
+    _save(session)
+    return {"dda_state": new_state, "doctor_k_msg": doctor_k_msg}
 
 
-@app.post("/api/room/{room_id}/complete", response_model=CompleteRoomResponse)
+@app.post("/api/room/{room_id}/complete")
 def complete_room(room_id: str, req: CompleteRoomRequest):
-    """Called when player clears a room — advances persona, flushes DDA log."""
-    session = _load_or_404(req.user_id, req.session_id)
-
+    session = _get_session(req.user_id, req.session_id)
+    if not session:
+        session = SessionState(session_id=req.session_id, user_id=req.user_id)
     new_persona = _dda.mark_room_complete(session, room_id, req.score)
-    flush_dda_events(session, room_id)
-    save_session(session)
-
-    persona_messages = {
-        PersonaStage.COLLABORATIVE: "Collaborator, channel restored. Proceed.",
-        PersonaStage.CARING:        "Well done. Your adaptability exceeds initial projections.",
-        PersonaStage.ALLY:          "Partner, the elevator is ready. One final step.",
-    }
-
-    return CompleteRoomResponse(
-        next_room=session.current_room,
-        persona_stage=new_persona,
-        doctor_k_msg=persona_messages.get(new_persona, "Proceeding."),
-    )
+    try:
+        flush_dda_events(session, room_id)
+    except Exception:
+        pass
+    _save(session)
+    return {"next_room": session.current_room, "persona_stage": new_persona}
 
 
 @app.post("/api/prompt/evaluate")
 def evaluate_prompt_endpoint(req: EvaluatePromptRequest):
-    """GDD §6.2 — POST /api/prompt/evaluate (Act III prompt scoring)"""
-    session = _load_or_404(req.user_id, req.session_id)
-    result = evaluate_prompt(req.prompt, req.task)
-    return result
+    return evaluate_prompt(req.prompt, req.task)
 
 
 @app.post("/api/quiz/submit")
 def submit_quiz(req: SubmitQuizRequest):
-    """GDD §6.2 — POST /api/quiz/submit"""
-    session = _load_or_404(req.user_id, req.session_id)
-
+    session = _get_session(req.user_id, req.session_id)
+    if not session:
+        session = SessionState(session_id=req.session_id, user_id=req.user_id)
     new_persona = _dda.mark_quiz_complete(session, req.score)
-    save_session(session)
-
+    _save(session)
     passed = req.score >= 0.75
-
-    closing = (
-        "Final certification complete. Protocol restored. "
-        "You earned your freedom with knowledge. Certificate issued."
-        if passed else
-        "Score insufficient for certification. Review flagged chapters and retry."
-    )
-
-    return {
-        "passed":        passed,
-        "score":         req.score,
-        "certificate":   session.certificate,
-        "persona_stage": new_persona,
-        "doctor_k_msg":  closing,
-    }
+    return {"passed": passed, "score": req.score,
+            "certificate": session.certificate, "persona_stage": new_persona}
 
 
-@app.get("/api/progress/{user_id}", response_model=ProgressResponse)
+@app.get("/api/progress/{user_id}")
 def get_progress(user_id: str, session_id: str):
-    """GDD §6.2 — GET /api/progress/{uid}"""
-    session = _load_or_404(user_id, session_id)
-
-    rooms_out = {}
-    for rid, room in session.rooms.items():
-        rooms_out[rid] = {
-            "completed": room.completed,
-            "score":     room.score,
-            "attempts":  room.attempts,
-            "dda_state": room.current_state,
-        }
-
-    return ProgressResponse(
-        session_id=session.session_id,
-        current_room=session.current_room,
-        persona_stage=session.persona_stage,
-        rooms=rooms_out,
-        quiz_completed=session.quiz_completed,
-        quiz_score=session.quiz_score,
-        certificate=session.certificate,
-    )
+    session = _get_session(user_id, session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    rooms_out = {
+        rid: {"completed": r.completed, "score": r.score,
+              "attempts": r.attempts, "dda_state": r.current_state}
+        for rid, r in session.rooms.items()
+    }
+    return {
+        "session_id": session.session_id, "current_room": session.current_room,
+        "persona_stage": session.persona_stage, "rooms": rooms_out,
+        "quiz_completed": session.quiz_completed, "quiz_score": session.quiz_score,
+        "certificate": session.certificate,
+    }
 
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": "escape-the-core-backend"}
-
-
-# ── Helpers ───────────────────────────────────────────────────────────────────
-
-def _load_or_404(user_id: str, session_id: str) -> SessionState:
-    session = load_session(user_id, session_id)
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
-    return session
-
-
-def _personalised_opening(session: SessionState) -> str:
-    """GDD §6.5 — personalised opening based on previous DDA history."""
-    # Find if player was stuck anywhere last session
-    stuck_concepts = []
-    for rid, room in session.rooms.items():
-        for record in room.history:
-            if record.dda_state == DDAState.STUCK:
-                stuck_concepts.append(record.answer_given[:40])
-                break
-
-    base = _OPENING_LINES.get(session.persona_stage, _OPENING_LINES[PersonaStage.COLD])
-
-    if stuck_concepts:
-        concept_hint = stuck_concepts[0]
-        return (
-            f"{base} Last session you struggled with: \"{concept_hint}\". "
-            "Let's do a quick recap before we continue."
-        )
-    return base
+    return {"status": "ok", "version": "2.1.0", "firebase": _firebase_available}
