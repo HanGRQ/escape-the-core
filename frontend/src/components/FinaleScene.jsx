@@ -1,9 +1,12 @@
 import { useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { QUIZ_QUESTIONS, PASS_THRESHOLD } from '../data/quizData'
+import { KAvatar } from './DoctorK'
 import { api } from '../api/client'
 
 const ACCENT = '#9B59B6'
+const BG     = '/assets/backgrounds/background4.png'
+const AVATAR = '/assets/doctors/doctor4.png'
 
 function QuizQuestion({ question, onAnswer, answered, selected }) {
   return (
@@ -112,6 +115,11 @@ function Certificate({ score, total, onContinue }) {
           }} />
         ))}
 
+        {/* Doctor K portrait — present for the final result */}
+        <div className="flex justify-center mb-4">
+          <KAvatar src={AVATAR} accent={ACCENT} size={92} />
+        </div>
+
         <div className="font-display text-xs tracking-[0.5em] mb-6 opacity-50" style={{ color: ACCENT }}>
           GRANITE CORE FACILITY
         </div>
@@ -174,7 +182,10 @@ function Certificate({ score, total, onContinue }) {
   )
 }
 
-export function FinaleScene({ sessionId, userId, personaStage = 'full_unlock', onComplete }) {
+// Note: default persona corrected to 'ally' (unlocked after Act III,
+// active throughout the Final Quiz — 'full_unlock' only applies after
+// the quiz is passed).
+export function FinaleScene({ sessionId, userId, personaStage = 'ally', onComplete }) {
   const [phase, setPhase] = useState('quiz')     // 'quiz' | 'certificate'
   const [currentIdx, setCurrentIdx] = useState(0)
   const [selected, setSelected]     = useState(null)
@@ -195,7 +206,6 @@ export function FinaleScene({ sessionId, userId, personaStage = 'full_unlock', o
   const handleNext = useCallback(async () => {
     const isLast = currentIdx === QUIZ_QUESTIONS.length - 1
     if (isLast) {
-      const finalScore = score + (selected === question.correct ? 0 : 0)  // already counted
       const pct = (score + (selected === question.correct ? 1 : 0)) / QUIZ_QUESTIONS.length
       // Submit to backend
       if (sessionId) {
@@ -214,12 +224,17 @@ export function FinaleScene({ sessionId, userId, personaStage = 'full_unlock', o
     }
   }, [currentIdx, score, selected, question, answers, sessionId, userId])
 
-  const sid = sessionId || 'offline'
   const finalScore = answers.filter(a => a.correct).length
 
   return (
-    <div className="relative w-full h-screen overflow-hidden flex flex-col"
-      style={{ background: 'radial-gradient(ellipse at center, #0E0514 0%, #080408 65%)' }}>
+    <div className="relative w-full h-screen overflow-hidden flex flex-col">
+      {/* Background image */}
+      <div className="absolute inset-0" style={{
+        backgroundImage: `url(${BG})`, backgroundSize: 'cover', backgroundPosition: 'center',
+      }} />
+      <div className="absolute inset-0" style={{
+        background: 'linear-gradient(180deg, rgba(14,5,20,0.6) 0%, rgba(8,4,8,0.88) 100%)',
+      }} />
       <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{
         backgroundImage: `linear-gradient(${ACCENT} 1px, transparent 1px), linear-gradient(90deg, ${ACCENT} 1px, transparent 1px)`,
         backgroundSize: '48px 48px',
@@ -227,12 +242,13 @@ export function FinaleScene({ sessionId, userId, personaStage = 'full_unlock', o
 
       {/* Top bar */}
       <div className="relative z-10 flex items-center justify-between px-6 py-2 flex-shrink-0"
-        style={{ borderBottom: `1px solid ${ACCENT}22`, background: '#08040888' }}>
-        <div className="flex items-center gap-4">
-          <motion.div animate={{ opacity:[1,0.3,1] }} transition={{ duration:2, repeat:Infinity }} className="flex items-center gap-2">
+        style={{ borderBottom: `1px solid ${ACCENT}22`, background: 'rgba(8,4,8,0.6)' }}>
+        <div className="flex items-center gap-3">
+          <KAvatar src={AVATAR} accent={ACCENT} size={40} />
+          <div className="flex items-center gap-2">
             <div className="w-1.5 h-1.5 rounded-full" style={{ background: ACCENT, boxShadow: `0 0 5px ${ACCENT}` }} />
             <span className="font-display text-xs tracking-widest" style={{ color: ACCENT }}>CERTIFICATION CHAMBER</span>
-          </motion.div>
+          </div>
           <span className="opacity-20 font-display text-xs text-white">|</span>
           <span className="font-display text-xs tracking-widest opacity-40 text-white">FINALE — FINAL EVALUATION</span>
         </div>
@@ -281,7 +297,7 @@ export function FinaleScene({ sessionId, userId, personaStage = 'full_unlock', o
       </div>
 
       <div className="relative z-10 flex items-center justify-end px-6 py-1.5 flex-shrink-0"
-        style={{ borderTop:`1px solid ${ACCENT}15`, background:'#08040866' }}>
+        style={{ borderTop:`1px solid ${ACCENT}15`, background:'rgba(8,4,8,0.6)' }}>
         <span className="font-mono text-xs opacity-20">ESCAPE THE CORE — FINALE</span>
       </div>
     </div>

@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { onAuthStateChanged, signOut } from 'firebase/auth'
+import { auth } from './firebase'
+import { IntroVideo } from './components/IntroVideo'
+import { LoginScreen } from './components/LoginScreen'
 import { Act1Scene } from './components/Act1Scene'
 import { Act2Scene } from './components/Act2Scene'
 import { Act3Scene } from './components/Act3Scene'
@@ -7,22 +11,15 @@ import { FinaleScene } from './components/FinaleScene'
 import { RoomTransition } from './components/RoomTransition'
 import { api } from './api/client'
 
-function getOrCreateUserId() {
-  const key = 'etc_user_id'
-  let id = localStorage.getItem(key)
-  if (!id) { id = 'anon_' + Math.random().toString(36).slice(2, 11); localStorage.setItem(key, id) }
-  return id
-}
-
-// Boot screen
-function BootScreen({ onStart, loading }) {
+// Boot screen (terminal text sequence, shown after login)
+function BootScreen({ onStart, onSignOut, loading, playerLabel }) {
   const [lines, setLines] = useState([])
   const boot = [
     '> GRANITE CORE FACILITY — EMERGENCY BOOT SEQUENCE',
     '> INITIALISING SECURITY PROTOCOLS...',
     '> G.A.I.A. SUBSYSTEM: CRITICAL FAILURE DETECTED',
     '> DOCTOR K: RESTRICTED CHANNEL ACTIVE',
-    '> PLAYER NODE DETECTED',
+    `> PLAYER NODE DETECTED — ${playerLabel || 'UNKNOWN'}`,
     loading ? '> CONNECTING TO CORE SYSTEMS...' : '> PRESS ANY KEY TO BEGIN',
   ]
   useEffect(() => {
@@ -32,7 +29,7 @@ function BootScreen({ onStart, loading }) {
       else clearInterval(t)
     }, 380)
     return () => clearInterval(t)
-  }, [loading])
+  }, [loading, playerLabel])
 
   return (
     <div className="w-full h-screen flex flex-col items-center justify-center cursor-pointer select-none"
@@ -57,11 +54,25 @@ function BootScreen({ onStart, loading }) {
           ))}
         </div>
       </div>
+
+      {!loading && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onSignOut() }}
+          className="absolute bottom-6 right-6 font-mono text-xs opacity-25 hover:opacity-60 transition-opacity"
+          style={{ color: '#E8F4FD' }}
+        >
+          not you? sign out →
+        </button>
+      )}
     </div>
   )
 }
 
-// Screens: boot → act1 → [transition] → act2 → [transition] → act3 → [transition] → finale → end
+// Screens: intro → login → boot → act1 → [transition] → act2 → [transition] → act3 → [transition] → finale → end
+//
+// Persona handoff (GDD §5.6):
+//   cold → collaborative (after Act I) → caring (after Act II)
+//        → ally (after Act III) → full_unlock (after passing the quiz)
 const TRANSITIONS = {
   act1_to_act2: { from: 'room_1', to: 'room_2' },
   act2_to_act3: { from: 'room_2', to: 'room_3' },
@@ -69,17 +80,47 @@ const TRANSITIONS = {
 }
 
 export default function App() {
-  const [screen, setScreen]             = useState('boot')
+  const [screen, setScreen]             = useState('intro')
+  const [introDone, setIntroDone]       = useState(false)
+
+  // Firebase Auth state — replaces the old localStorage random anon ID.
+  // `user.uid` is now the real, stable identity used as userId throughout
+  // the app, so different players' progress is stored separately under
+  // users/{uid}/... in Firestore (see backend/app/firebase_service.py).
+  const [user, setUser]                 = useState(null)
+  const [authChecked, setAuthChecked]   = useState(false)
+
   const [sessionId, setSessionId]       = useState(null)
-  const [userId]                        = useState(getOrCreateUserId)
   const [personaStage, setPersonaStage] = useState('cold')
   const [loading, setLoading]           = useState(false)
-  const [transition, setTransition]     = useState(null)  // {from, to, nextScreen, nextPersona}
+  const [transition, setTransition]     = useState(null)  // {from, to, nextScreen}
+
+  // Watch Firebase Auth state for the lifetime of the app.
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (u) => {
+      setUser(u)
+      setAuthChecked(true)
+    })
+    return unsubscribe
+  }, [])
+
+  // Pre-game bootstrapping: intro video → (login if needed) → boot.
+  // Only acts while screen is 'intro' or 'login' — never interferes with
+  // screens after gameplay has actually started.
+  useEffect(() => {
+    if (!authChecked) return
+    if (screen === 'intro' && introDone) {
+      setScreen(user ? 'boot' : 'login')
+    } else if (screen === 'login' && user) {
+      setScreen('boot')
+    }
+  }, [authChecked, introDone, user, screen])
 
   const startGame = async () => {
+    if (!user) return
     setLoading(true)
     try {
-      const res = await api.startSession(userId)
+      const res = await api.startSession(user.uid)
       setSessionId(res.session_id)
       setPersonaStage(res.persona_stage || 'cold')
     } catch (e) {
@@ -88,6 +129,13 @@ export default function App() {
     }
     setLoading(false)
     setScreen('act1')
+  }
+
+  const handleSignOut = async () => {
+    try { await signOut(auth) } catch (e) { console.warn('Sign out failed:', e.message) }
+    setSessionId(null)
+    setPersonaStage('cold')
+    setScreen('login')
   }
 
   // Trigger room transition then switch screen
@@ -108,14 +156,30 @@ export default function App() {
     }
   }
 
-  const commonProps = { sessionId, userId, personaStage }
+  const commonProps = { sessionId, userId: user?.uid, personaStage }
+
+  const playerLabel = user?.isAnonymous
+    ? `GUEST-${user.uid.slice(0, 6).toUpperCase()}`
+    : (user?.email || '').toUpperCase()
 
   return (
     <div className="relative w-full h-screen overflow-hidden">
       <AnimatePresence mode="wait">
+        {screen === 'intro' && (
+          <motion.div key="intro" exit={{ opacity:0 }} className="w-full h-screen">
+            <IntroVideo onFinish={() => setIntroDone(true)} />
+          </motion.div>
+        )}
+
+        {screen === 'login' && (
+          <motion.div key="login" initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }} className="w-full h-screen">
+            <LoginScreen onAuthenticated={() => {}} />
+          </motion.div>
+        )}
+
         {screen === 'boot' && (
           <motion.div key="boot" exit={{ opacity:0 }} className="w-full h-screen">
-            <BootScreen onStart={startGame} loading={loading} />
+            <BootScreen onStart={startGame} onSignOut={handleSignOut} loading={loading} playerLabel={playerLabel} />
           </motion.div>
         )}
 
@@ -136,7 +200,7 @@ export default function App() {
         {screen === 'act3' && (
           <motion.div key="act3" initial={{ opacity:0 }} animate={{ opacity:1 }} className="w-full h-screen">
             <Act3Scene {...commonProps}
-              onComplete={(persona) => goTo('finale', persona || 'full_unlock', 'act3_to_finale')} />
+              onComplete={(persona) => goTo('finale', persona || 'ally', 'act3_to_finale')} />
           </motion.div>
         )}
 
@@ -158,7 +222,7 @@ export default function App() {
                 FACILITY RESTORED
               </motion.div>
               <div className="font-mono text-sm opacity-50">Thank you for playing Escape the Core.</div>
-              <button onClick={() => { setScreen('boot'); setPersonaStage('cold'); setSessionId(null) }}
+              <button onClick={() => { setSessionId(null); setPersonaStage('cold'); setScreen('boot') }}
                 className="mt-4 px-6 py-2 font-display text-xs tracking-widest rounded"
                 style={{ border:'1px solid #9B59B6', color:'#9B59B6' }}>
                 [ PLAY AGAIN ]

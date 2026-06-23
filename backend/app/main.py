@@ -1,7 +1,13 @@
 """
-FastAPI Backend v2.1 — Firebase-optional.
+FastAPI Backend v2.2 — Firebase-optional.
 Teaching and chat work without Firebase.
 Session-dependent endpoints (submit, complete, quiz) gracefully degrade.
+
+v2.2 changes:
+  - submit_answer / get_hint now wrap RAG + Doctor K generation in try/except
+    so a transient Claude API or retrieval failure returns a safe fallback
+    message instead of a 500, and the underlying exception is printed to
+    the console for debugging.
 """
 
 from __future__ import annotations
@@ -36,7 +42,7 @@ except Exception as _fb_err:
     def flush_dda_events(s, r): pass
     def get_user_sessions(uid): return []
 
-app = FastAPI(title="Escape the Core API", version="2.1.0")
+app = FastAPI(title="Escape the Core API", version="2.2.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -149,6 +155,7 @@ def teach_room(
                 yield sse_event(chunk)
             yield sse_done()
         except Exception as e:
+            print(f"[ERROR] /room/{room_id}/teach failed: {e!r}")
             yield sse_error(str(e))
 
     return StreamingResponse(generate(), media_type="text/event-stream", headers=SSE_HEADERS)
@@ -170,6 +177,7 @@ def chat_with_doctor_k(room_id: str, req: ChatRequest):
                 yield sse_event(chunk)
             yield sse_done()
         except Exception as e:
+            print(f"[ERROR] /room/{room_id}/chat failed: {e!r}")
             yield sse_error(str(e))
 
     return StreamingResponse(generate(), media_type="text/event-stream", headers=SSE_HEADERS)
@@ -209,7 +217,6 @@ def submit_answer(room_id: str, req: SubmitAnswerRequest):
         # Create ephemeral session so the game still works
         session = SessionState(session_id=req.session_id, user_id=req.user_id)
 
-    rag = get_rag()
     new_state, show_scaffold = _dda.process_attempt(
         session=session,
         room_id=room_id,
@@ -222,19 +229,28 @@ def submit_answer(room_id: str, req: SubmitAnswerRequest):
     doctor_k_msg = ""
 
     if not req.is_correct:
-        result = rag.retrieve_for_dda(
-            player_state=new_state.lower(),
-            wrong_answer=req.answer_given,
-            room=room_id,
-        )
-        hint_chunks = result.combined
-        doctor_k_msg = generate_dda_response(
-            dda_state=new_state,
-            persona_stage=session.persona_stage,
-            room_id=room_id,
-            wrong_answer=req.answer_given,
-            hint_chunks=hint_chunks,
-        )
+        # NOTE: RAG retrieval + Claude API generation can fail transiently
+        # (network blip, rate limit, model name issue, etc). Never let that
+        # take down the whole request — the DDA state above is still valid
+        # and must reach the frontend regardless.
+        try:
+            rag = get_rag()
+            result = rag.retrieve_for_dda(
+                player_state=new_state.lower(),
+                wrong_answer=req.answer_given,
+                room=room_id,
+            )
+            hint_chunks = result.combined
+            doctor_k_msg = generate_dda_response(
+                dda_state=new_state,
+                persona_stage=session.persona_stage,
+                room_id=room_id,
+                wrong_answer=req.answer_given,
+                hint_chunks=hint_chunks,
+            )
+        except Exception as e:
+            print(f"[ERROR] /room/{room_id}/submit DDA/RAG generation failed: {e!r}")
+            doctor_k_msg = "Signal interference detected. Recalibrating — try again."
 
     _save(session)
 
@@ -252,16 +268,22 @@ def get_hint(room_id: str, session_id: str, user_id: str):
     session = _get_session(user_id, session_id)
     if not session:
         session = SessionState(session_id=session_id, user_id=user_id)
-    rag = get_rag()
     new_state = _dda.set_help_requested(session, room_id)
-    result = rag.retrieve_for_dda("confused", "player requested hint", room_id)
-    doctor_k_msg = generate_dda_response(
-        dda_state=DDAState.CONFUSED,
-        persona_stage=session.persona_stage,
-        room_id=room_id,
-        wrong_answer="",
-        hint_chunks=result.combined,
-    )
+
+    doctor_k_msg = "Hint unavailable — recalibrating."
+    try:
+        rag = get_rag()
+        result = rag.retrieve_for_dda("confused", "player requested hint", room_id)
+        doctor_k_msg = generate_dda_response(
+            dda_state=DDAState.CONFUSED,
+            persona_stage=session.persona_stage,
+            room_id=room_id,
+            wrong_answer="",
+            hint_chunks=result.combined,
+        )
+    except Exception as e:
+        print(f"[ERROR] /room/{room_id}/hint generation failed: {e!r}")
+
     _save(session)
     return {"dda_state": new_state, "doctor_k_msg": doctor_k_msg}
 
@@ -282,7 +304,14 @@ def complete_room(room_id: str, req: CompleteRoomRequest):
 
 @app.post("/api/prompt/evaluate")
 def evaluate_prompt_endpoint(req: EvaluatePromptRequest):
-    return evaluate_prompt(req.prompt, req.task)
+    try:
+        return evaluate_prompt(req.prompt, req.task)
+    except Exception as e:
+        print(f"[ERROR] /prompt/evaluate failed: {e!r}")
+        return {
+            "scores": {"role": 0, "task": 0, "constraints": 0, "example": 0, "clarity": 0},
+            "total": 0, "missing": [], "suggestion": "Evaluation error. Try again.",
+        }
 
 
 @app.post("/api/quiz/submit")
@@ -317,4 +346,4 @@ def get_progress(user_id: str, session_id: str):
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "version": "2.1.0", "firebase": _firebase_available}
+    return {"status": "ok", "version": "2.2.0", "firebase": _firebase_available}

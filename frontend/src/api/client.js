@@ -39,9 +39,18 @@ function streamPost(path, body, { onChunk, onDone, onError }) {
       buffer += decoder.decode(value, { stream: true })
       const lines = buffer.split('\n')
       buffer = lines.pop()
-      for (const line of lines) {
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i]
         if (line.startsWith('event: done')) { onDone?.(); return }
-        if (line.startsWith('event: error')) { onError?.('Stream error'); return }
+        if (line.startsWith('event: error')) {
+          let msg = 'Stream error'
+          const next = lines[i + 1]
+          if (next && next.startsWith('data: ')) {
+            try { msg = JSON.parse(next.slice(6))?.error || msg } catch {}
+          }
+          onError?.(msg)
+          return
+        }
         if (line.startsWith('data: ')) {
           try { onChunk?.(JSON.parse(line.slice(6))) } catch {}
         }
@@ -68,9 +77,18 @@ function streamGet(path, params, { onChunk, onDone, onError }) {
         buffer += decoder.decode(value, { stream: true })
         const lines = buffer.split('\n')
         buffer = lines.pop()
-        for (const line of lines) {
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i]
           if (line.startsWith('event: done')) { onDone?.(); return }
-          if (line.startsWith('event: error')) { onError?.('Stream error'); return }
+          if (line.startsWith('event: error')) {
+            let msg = 'Stream error'
+            const next = lines[i + 1]
+            if (next && next.startsWith('data: ')) {
+              try { msg = JSON.parse(next.slice(6))?.error || msg } catch {}
+            }
+            onError?.(msg)
+            return
+          }
           if (line.startsWith('data: ')) {
             try { onChunk?.(JSON.parse(line.slice(6))) } catch {}
           }

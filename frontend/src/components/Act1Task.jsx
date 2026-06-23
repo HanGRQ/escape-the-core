@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { LOG_ENTRIES, USE_CASE_SLOTS } from '../data/act1Data'
 
@@ -27,14 +27,21 @@ function useDragDrop(onDrop) {
   return { dragging, over, onDragStart, onDragOver, onDragLeave, onDropSlot, onDragEnd }
 }
 
-export function Act1Task({ onAttempt, onComplete, ddaStatus, personaStage }) {
+/**
+ * Act1Task — drag-and-drop use-case matching task.
+ *
+ * onHint(text) is called whenever a wrong drop occurs, so the parent scene
+ * can push it into Doctor K's unified conversation feed (per the new
+ * "everything is dialogue" layout) instead of rendering a separate local
+ * hint panel.
+ */
+export function Act1Task({ onAttempt, onComplete, onHint, ddaStatus }) {
   // slotFills: { slotId -> logId }
   const [slotFills, setSlotFills]   = useState({})
   // slotState: { slotId -> 'idle'|'correct'|'incorrect' }
   const [slotState, setSlotState]   = useState({})
   // locked logIds (correctly placed)
   const [locked, setLocked]         = useState(new Set())
-  const [activeHint, setActiveHint] = useState(null)
   const [completed, setCompleted]   = useState(false)
 
   // Remaining unplaced entries
@@ -54,21 +61,20 @@ export function Act1Task({ onAttempt, onComplete, ddaStatus, personaStage }) {
 
     if (isCorrect) {
       setLocked(prev => new Set([...prev, logId]))
-      setActiveHint(null)
       // Clear slot state after glow settles
       setTimeout(() => {
         setSlotState(prev => ({ ...prev, [slotId]: 'correct' }))
       }, 600)
     } else {
-      // Show hint from log entry
-      setActiveHint(entry.hint)
+      // Route the hint into Doctor K's conversation feed
+      onHint?.(entry.hint)
       // Remove incorrect fill after shake
       setTimeout(() => {
         setSlotFills(prev => { const n = { ...prev }; delete n[slotId]; return n })
         setSlotState(prev => ({ ...prev, [slotId]: 'idle' }))
       }, 800)
     }
-  }, [locked, onAttempt])
+  }, [locked, onAttempt, onHint])
 
   // Check completion
   useEffect(() => {
@@ -78,7 +84,7 @@ export function Act1Task({ onAttempt, onComplete, ddaStatus, personaStage }) {
     }
   }, [locked.size, completed, onComplete])
 
-  // STRUGGLING: reduce to 3 options (show only 3 remaining + correct ones)
+  // STRUGGLING/STUCK: reduce to 3 options
   const visibleEntries = ddaStatus === 'STRUGGLING' || ddaStatus === 'STUCK'
     ? remaining.slice(0, 3)
     : remaining
@@ -134,24 +140,6 @@ export function Act1Task({ onAttempt, onComplete, ddaStatus, personaStage }) {
             ALL ENTRIES DISPATCHED
           </div>
         )}
-
-        {/* DDA hint display */}
-        <AnimatePresence>
-          {activeHint && (
-            <motion.div
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="mt-2 px-3 py-2 rounded"
-              style={{ background: '#F39C1210', border: '1px solid #F39C1244' }}
-            >
-              <div className="flex items-center gap-1 mb-1">
-                <span className="text-act1-amber font-display text-xs">DOCTOR K //</span>
-              </div>
-              <p className="font-mono text-xs text-act1-amber leading-relaxed">{activeHint}</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
 
       {/* RIGHT — Use-case slots (drop targets) */}

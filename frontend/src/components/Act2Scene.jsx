@@ -1,14 +1,21 @@
 import { useState, useCallback, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { DoctorK } from './DoctorK'
-import { DDAFlash, DDAStatusBar, DDAFeedbackBanner } from './DDAFeedback'
+import { TeachingPanel } from './TeachingPanel'
+import { DDAFlash, DDAStatusBar } from './DDAFeedback'
 import { usePlayerTracker } from '../hooks/usePlayerTracker'
 import { GRANITE_MODELS, MODEL_TASKS } from '../data/act2Data'
 import { api } from '../api/client'
 
+// Declared once, at the very top of the module — keeps the earlier
+// "accentColor is not defined" crash from ever recurring (no nested or
+// out-of-scope re-declaration anywhere in this file).
+const ACCENT = '#3498DB'
+const BG     = '/assets/backgrounds/background2.png'
+const AVATAR = '/assets/doctors/doctor2.png'
+
 // ── Model Card (draggable) ────────────────────────────────────────────────────
-function ModelCard({ model, dragging, onDragStart, onDragEnd, locked }) {
-  if (locked) return null
+function ModelCard({ model, dragging, onDragStart, onDragEnd }) {
   return (
     <motion.div
       layout
@@ -56,7 +63,7 @@ function TaskSlot({ task, over, slotState, filledModel, onDragOver, onDragLeave,
       onDragOver={e => { e.preventDefault(); onDragOver(task.id) }}
       onDragLeave={onDragLeave}
       onDrop={e => { e.preventDefault(); onDrop(task.id) }}
-      animate={state === 'incorrect' ? { x: [0,-4,4,-4,0] } : {}}
+      animate={state === 'incorrect' ? { x: [0, -4, 4, -4, 0] } : {}}
       transition={{ duration: 0.3 }}
       className="rounded-lg px-3 py-2.5 min-h-[58px] flex items-start gap-3"
       style={{
@@ -106,14 +113,19 @@ function TaskSlot({ task, over, slotState, filledModel, onDragOver, onDragLeave,
 // ── Act II Scene ──────────────────────────────────────────────────────────────
 export function Act2Scene({ sessionId, userId, personaStage = 'collaborative', onComplete }) {
   const tracker = usePlayerTracker('room_2')
-  const [phase, setPhase] = useState('teaching')   // 'teaching' | 'task'
-  const [teachText, setTeachText]     = useState('')
-  const [isStreaming, setStreaming]   = useState(false)
-  const [teachDone, setTeachDone]    = useState(false)
+
+  // 'teaching' — lecture streams in the RIGHT panel
+  // 'task'     — model classification UI replaces the lecture
+  const [phase, setPhase] = useState('teaching')
+
+  const [teachText, setTeachText] = useState('')
+  const [isStreaming, setStreaming] = useState(false)
+  const [teachDone, setTeachDone] = useState(false)
   const streamRef = useRef(null)
-  const [chatHistory, setChatHistory] = useState([])
+
+  // Left-panel feed: ONLY chat Q&A + DDA task guidance
+  const [feed, setFeed] = useState([])
   const [chatLoading, setChatLoading] = useState(false)
-  const [ddaMessage, setDdaMessage]   = useState('')
   const [flashTrigger, setFlashTrigger] = useState(0)
 
   // Drag state
@@ -122,7 +134,6 @@ export function Act2Scene({ sessionId, userId, personaStage = 'collaborative', o
   const [slotFills, setSlotFills] = useState({})   // taskId → modelId
   const [slotState, setSlotState] = useState({})   // taskId → idle|correct|incorrect
   const [locked, setLocked]       = useState(new Set())  // locked modelIds
-  const [activeHint, setActiveHint] = useState(null)
 
   const sid = sessionId || 'offline'
 
@@ -131,26 +142,41 @@ export function Act2Scene({ sessionId, userId, personaStage = 'collaborative', o
     setStreaming(true)
     streamRef.current = api.streamTeach('room_2', sid, userId, {
       onChunk: chunk => setTeachText(prev => prev + chunk),
-      onDone:  () => { setStreaming(false); setTeachDone(true) },
-      onError: err => { setStreaming(false); setTeachText(prev => prev + `\n\n[ Error: ${err} ]`); setTeachDone(true) },
+      onDone: () => { setStreaming(false); setTeachDone(true) },
+      onError: err => {
+        setStreaming(false)
+        setTeachText(prev => prev + `\n\n[ Error: ${err} ]`)
+        setTeachDone(true)
+      },
     })
     return () => streamRef.current?.abort()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const sendChat = useCallback((message) => {
-    setChatHistory(prev => [...prev, { role: 'user', content: message }])
+    setFeed(prev => [
+      ...prev,
+      { role: 'user', content: message },
+      { role: 'assistant', content: '', streaming: true, kind: 'chat' },
+    ])
     setChatLoading(true)
-    setChatHistory(prev => [...prev, { role: 'assistant', content: '', streaming: true }])
-    api.streamChat('room_2', { sessionId: sid, userId, message, history: chatHistory.filter(m => !m.streaming) }, {
-      onChunk: chunk => setChatHistory(prev => {
-        const u = [...prev]; const l = u[u.length-1]
-        if (l?.role === 'assistant') u[u.length-1] = { ...l, content: l.content + chunk }
+    const history = feed.filter(m => !m.streaming).map(m => ({ role: m.role, content: m.content }))
+    api.streamChat('room_2', { sessionId: sid, userId, message, history }, {
+      onChunk: chunk => setFeed(prev => {
+        const u = [...prev]; const l = u[u.length - 1]
+        if (l?.role === 'assistant') u[u.length - 1] = { ...l, content: l.content + chunk }
         return u
       }),
-      onDone: () => { setChatHistory(prev => { const u=[...prev]; if(u[u.length-1]?.streaming) u[u.length-1]={...u[u.length-1],streaming:false}; return u }); setChatLoading(false) },
-      onError: () => { setChatHistory(prev => { const u=[...prev]; if(u[u.length-1]?.streaming) u[u.length-1]={...u[u.length-1],content:'Connection error.',streaming:false}; return u }); setChatLoading(false) },
+      onDone: () => {
+        setFeed(prev => { const u = [...prev]; if (u[u.length - 1]?.streaming) u[u.length - 1] = { ...u[u.length - 1], streaming: false }; return u })
+        setChatLoading(false)
+      },
+      onError: () => {
+        setFeed(prev => { const u = [...prev]; if (u[u.length - 1]?.streaming) u[u.length - 1] = { ...u[u.length - 1], content: 'Connection error.', streaming: false }; return u })
+        setChatLoading(false)
+      },
     })
-  }, [sid, userId, chatHistory])
+  }, [sid, userId, feed])
 
   const handleDrop = useCallback((taskId) => {
     if (!dragging) return
@@ -165,21 +191,24 @@ export function Act2Scene({ sessionId, userId, personaStage = 'collaborative', o
     const timeTaken = tracker.recordAttempt(isCorrect, model.name)
     if (!isCorrect) {
       setFlashTrigger(n => n + 1)
-      setActiveHint(task.hint)
+      // Route the local hint into Doctor K's left-panel feed
+      setFeed(prev => [...prev, { role: 'assistant', content: task.hint, kind: 'dda' }])
       setTimeout(() => {
-        setSlotFills(prev => { const n={...prev}; delete n[taskId]; return n })
+        setSlotFills(prev => { const n = { ...prev }; delete n[taskId]; return n })
         setSlotState(prev => ({ ...prev, [taskId]: 'idle' }))
       }, 900)
     } else {
       setLocked(prev => new Set([...prev, dragging]))
-      setActiveHint(null)
     }
 
-    if (sessionId) {
-      api.submitAnswer('room_2', { sessionId: sid, userId, isCorrect, timeTakenMs: timeTaken, answerGiven: model.name })
-        .then(res => { if (res.doctor_k_msg) { setDdaMessage(res.doctor_k_msg); setChatHistory(prev => [...prev, { role: 'assistant', content: res.doctor_k_msg }]) } })
-        .catch(() => {})
-    }
+    api.submitAnswer('room_2', { sessionId: sid, userId, isCorrect, timeTakenMs: timeTaken, answerGiven: model.name })
+      .then(res => {
+        if (res?.doctor_k_msg) {
+          setFeed(prev => [...prev, { role: 'assistant', content: res.doctor_k_msg, kind: 'dda' }])
+        }
+      })
+      .catch(() => {})
+
     tracker.startAttemptTimer()
     setDragging(null)
     setOver(null)
@@ -189,119 +218,116 @@ export function Act2Scene({ sessionId, userId, personaStage = 'collaborative', o
   useEffect(() => {
     if (locked.size === MODEL_TASKS.length) {
       setTimeout(async () => {
-        if (sessionId) { try { await api.completeRoom('room_2', { sessionId: sid, userId, score: 1.0 }) } catch {} }
+        try { await api.completeRoom('room_2', { sessionId: sid, userId, score: 1.0 }) } catch {}
         onComplete('caring')
       }, 1400)
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locked.size])
 
   const unlockedModels = GRANITE_MODELS.filter(m => !locked.has(m.id))
-  const accentColor = '#3498DB'
 
   return (
-    <div className="relative w-full h-screen overflow-hidden flex flex-col"
-      style={{ background: 'radial-gradient(ellipse at 30% 10%, #061428 0%, #020810 65%)' }}>
-      {/* Grid */}
-      <div className="absolute inset-0 opacity-[0.04] pointer-events-none" style={{
-        backgroundImage: `linear-gradient(${accentColor} 1px, transparent 1px), linear-gradient(90deg, ${accentColor} 1px, transparent 1px)`,
+    <div className="relative w-full h-screen overflow-hidden flex">
+      {/* Background image */}
+      <div className="absolute inset-0" style={{
+        backgroundImage: `url(${BG})`, backgroundSize: 'cover', backgroundPosition: 'center',
+      }} />
+      <div className="absolute inset-0" style={{
+        background: 'linear-gradient(180deg, rgba(2,8,16,0.55) 0%, rgba(2,8,16,0.85) 100%)',
+      }} />
+      <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{
+        backgroundImage: `linear-gradient(${ACCENT} 1px, transparent 1px), linear-gradient(90deg, ${ACCENT} 1px, transparent 1px)`,
         backgroundSize: '48px 48px',
       }} />
 
       <DDAFlash trigger={flashTrigger} state={tracker.currentStatus} />
 
-      {/* Top bar */}
-      <div className="relative z-10 flex items-center justify-between px-6 py-2 flex-shrink-0"
-        style={{ borderBottom: `1px solid ${accentColor}22`, background: '#02081088' }}>
-        <div className="flex items-center gap-4">
-          <motion.div animate={{ opacity: [1,0.3,1] }} transition={{ duration: 2, repeat: Infinity }}
-            className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full" style={{ background: accentColor, boxShadow: `0 0 5px ${accentColor}` }} />
-            <span className="font-display text-xs tracking-widest" style={{ color: accentColor }}>SERVER ROOM — SECTOR 2</span>
-          </motion.div>
-          <span className="opacity-20 font-display text-xs text-white">|</span>
-          <span className="font-display text-xs tracking-widest opacity-40 text-white">ACT II — MODEL CLASSIFICATION</span>
+      {/* ── Left — Doctor K: Q&A + task guidance ONLY ── */}
+      <div className="relative z-10 flex-shrink-0 h-full flex flex-col"
+        style={{ width: '34%', borderRight: `1px solid ${ACCENT}33`, background: 'rgba(2,8,16,0.6)' }}>
+        <div className="flex items-center px-5 py-2 flex-shrink-0" style={{ borderBottom: `1px solid ${ACCENT}22` }}>
+          <span className="font-display text-xs tracking-widest opacity-50" style={{ color: ACCENT }}>
+            ACT II — CORE CHAMBER REASSEMBLY
+          </span>
         </div>
-        <DDAStatusBar status={tracker.currentStatus} consecutiveErrors={tracker.consecutiveErrors} />
+        <div className="flex-1 min-h-0">
+          <DoctorK
+            persona={personaStage}
+            avatarSrc={AVATAR}
+            feed={feed}
+            onSendMessage={sendChat}
+            isChatLoading={chatLoading}
+          />
+        </div>
       </div>
 
-      {/* Main */}
-      <div className="relative z-10 flex-1 min-h-0">
-        <AnimatePresence mode="wait">
-          {phase === 'teaching' && (
-            <motion.div key="teach" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="h-full">
-              <DoctorK mode="fullscreen" persona={personaStage} streamingText={teachText} isStreaming={isStreaming}
-                chatHistory={chatHistory} onSendMessage={sendChat} isChatLoading={chatLoading}
-                teachingDone={teachDone} onBeginTask={() => { setPhase('task'); tracker.startAttemptTimer() }} />
-            </motion.div>
-          )}
+      {/* ── Right — Teaching, then Task ── */}
+      <div className="relative z-10 flex-1 min-w-0 flex flex-col">
+        <div className="flex items-center justify-between px-6 py-2 flex-shrink-0"
+          style={{ borderBottom: `1px solid ${ACCENT}33`, background: 'rgba(2,8,16,0.5)' }}>
+          <motion.div animate={{ opacity: [1, 0.3, 1] }} transition={{ duration: 2, repeat: Infinity }}
+            className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full" style={{ background: ACCENT, boxShadow: `0 0 5px ${ACCENT}` }} />
+            <span className="font-display text-xs tracking-widest" style={{ color: ACCENT }}>SERVER ROOM — SECTOR 2</span>
+          </motion.div>
+          <DDAStatusBar status={tracker.currentStatus} consecutiveErrors={tracker.consecutiveErrors} />
+        </div>
 
-          {phase === 'task' && (
-            <motion.div key="task" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="h-full flex">
-              {/* Sidebar */}
-              <motion.div initial={{ width: '100%' }} animate={{ width: '300px' }} transition={{ duration: 0.6, ease: [0.4,0,0.2,1] }}
-                className="flex-shrink-0 flex flex-col h-full p-4 gap-3"
-                style={{ borderRight: `1px solid ${accentColor}22`, background: '#02081066' }}>
-                <DoctorK mode="sidebar" persona={personaStage} chatHistory={chatHistory}
-                  onSendMessage={sendChat} isChatLoading={chatLoading} />
+        <div className="flex-1 min-h-0 p-6 overflow-auto" style={{ background: 'rgba(2,8,16,0.3)' }}>
+          {phase === 'teaching' ? (
+            <TeachingPanel
+              accent={ACCENT}
+              title="TRANSMISSION // CORE CHAMBER BRIEFING"
+              text={teachText}
+              isStreaming={isStreaming}
+              teachDone={teachDone}
+              onBeginTask={() => { setPhase('task'); tracker.startAttemptTimer() }}
+            />
+          ) : (
+            <div className="flex gap-5 h-full">
+              {/* Model cards */}
+              <div className="w-44 flex-shrink-0 flex flex-col gap-2">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-1 h-4" style={{ background: ACCENT }} />
+                  <span className="font-display text-xs tracking-widest" style={{ color: ACCENT }}>MODELS</span>
+                </div>
                 <AnimatePresence>
-                  {ddaMessage && tracker.currentStatus !== 'FLOW' && (
-                    <DDAFeedbackBanner status={tracker.currentStatus} message={ddaMessage} onDismiss={() => setDdaMessage('')} />
-                  )}
-                </AnimatePresence>
-                {activeHint && (
-                  <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
-                    className="rounded px-3 py-2" style={{ background: '#F39C1210', border: '1px solid #F39C1244' }}>
-                    <span className="font-display text-xs" style={{ color: '#F39C12' }}>HINT // </span>
-                    <p className="font-mono text-xs mt-1" style={{ color: '#F39C12', opacity: 0.85 }}>{activeHint}</p>
-                  </motion.div>
-                )}
-              </motion.div>
-
-              {/* Task area */}
-              <div className="flex-1 min-w-0 p-5 overflow-auto flex gap-5">
-                {/* Model cards */}
-                <div className="w-44 flex-shrink-0 flex flex-col gap-2">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-1 h-4" style={{ background: accentColor }} />
-                    <span className="font-display text-xs tracking-widest" style={{ color: accentColor }}>MODELS</span>
-                  </div>
-                  <AnimatePresence>
-                    {unlockedModels.map(model => (
-                      <ModelCard key={model.id} model={model} dragging={dragging}
-                        onDragStart={id => { setDragging(id); tracker.startAttemptTimer() }}
-                        onDragEnd={() => setDragging(null)} locked={false} />
-                    ))}
-                  </AnimatePresence>
-                  {unlockedModels.length === 0 && (
-                    <p className="font-mono text-xs opacity-30 text-center py-4" style={{ color: accentColor }}>All models deployed</p>
-                  )}
-                </div>
-
-                {/* Task slots */}
-                <div className="flex-1 flex flex-col gap-2">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-1 h-4" style={{ background: '#5DADE2' }} />
-                    <span className="font-display text-xs tracking-widest text-cold-cyan">TASK QUEUE</span>
-                    <span className="font-mono text-xs opacity-30 ml-auto" style={{ color: accentColor }}>
-                      {locked.size}/{MODEL_TASKS.length} assigned
-                    </span>
-                  </div>
-                  {MODEL_TASKS.map(task => (
-                    <TaskSlot key={task.id} task={task} over={over === task.id}
-                      slotState={slotState[task.id]} filledModel={GRANITE_MODELS.find(m => m.id === slotFills[task.id])}
-                      onDragOver={id => setOver(id)} onDragLeave={() => setOver(null)}
-                      onDrop={() => handleDrop(task.id)} />
+                  {unlockedModels.map(model => (
+                    <ModelCard key={model.id} model={model} dragging={dragging}
+                      onDragStart={id => { setDragging(id); tracker.startAttemptTimer() }}
+                      onDragEnd={() => setDragging(null)} />
                   ))}
-                </div>
+                </AnimatePresence>
+                {unlockedModels.length === 0 && (
+                  <p className="font-mono text-xs opacity-30 text-center py-4" style={{ color: ACCENT }}>All models deployed</p>
+                )}
               </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
 
-      <div className="relative z-10 flex items-center justify-end px-6 py-1.5 flex-shrink-0"
-        style={{ borderTop: `1px solid ${accentColor}15`, background: '#02081066' }}>
-        <span className="font-mono text-xs opacity-20">ESCAPE THE CORE — ACT II</span>
+              {/* Task slots */}
+              <div className="flex-1 flex flex-col gap-2">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="w-1 h-4" style={{ background: '#5DADE2' }} />
+                  <span className="font-display text-xs tracking-widest text-cold-cyan">TASK QUEUE</span>
+                  <span className="font-mono text-xs opacity-30 ml-auto" style={{ color: ACCENT }}>
+                    {locked.size}/{MODEL_TASKS.length} assigned
+                  </span>
+                </div>
+                {MODEL_TASKS.map(task => (
+                  <TaskSlot key={task.id} task={task} over={over === task.id}
+                    slotState={slotState[task.id]} filledModel={GRANITE_MODELS.find(m => m.id === slotFills[task.id])}
+                    onDragOver={id => setOver(id)} onDragLeave={() => setOver(null)}
+                    onDrop={() => handleDrop(task.id)} />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center justify-end px-6 py-1.5 flex-shrink-0"
+          style={{ borderTop: `1px solid ${ACCENT}22`, background: 'rgba(2,8,16,0.55)' }}>
+          <span className="font-mono text-xs opacity-20">ESCAPE THE CORE — ACT II</span>
+        </div>
       </div>
     </div>
   )

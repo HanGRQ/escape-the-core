@@ -14,12 +14,18 @@ Usage (in DDA engine or API handler):
     print(result.track_a)   # metadata-filtered chunks
     print(result.track_b)   # semantic chunks
     print(result.combined)  # deduplicated merge, best chunks first
+
+v2: anonymized_telemetry disabled to silence the harmless
+    "Failed to send telemetry event ... capture() takes 1 positional
+    argument but 3 were given" warnings caused by a ChromaDB/PostHog
+    version mismatch.
 """
 
 from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 import chromadb
+from chromadb.config import Settings
 from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
 
 # ── Config ────────────────────────────────────────────────────────────────────
@@ -59,7 +65,10 @@ class RAGRetriever:
 
     def __init__(self):
         embed_fn = SentenceTransformerEmbeddingFunction(model_name=EMBED_MODEL)
-        client   = chromadb.PersistentClient(path=str(CHROMA_DIR))
+        client   = chromadb.PersistentClient(
+            path=str(CHROMA_DIR),
+            settings=Settings(anonymized_telemetry=False),
+        )
         self._col = client.get_collection(
             name=COLLECTION,
             embedding_function=embed_fn,

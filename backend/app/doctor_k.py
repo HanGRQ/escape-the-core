@@ -8,6 +8,13 @@ Three modes:
 
 All responses go through Claude API — no template strings for player-facing content.
 Cost control: max_tokens=400 for teaching, 200 for DDA, 300 for chat.
+
+v3: every persona prompt and every per-call instruction now explicitly
+    forbids markdown syntax (asterisks, underscores, backticks, headers,
+    list markers). This is the source-side fix for stray "**word**" /
+    "*word*" occasionally leaking into player-facing text; the frontend
+    also has a defensive stripMarkdown() pass as a second line of
+    defence (frontend/src/utils/textFormat.js).
 """
 
 from __future__ import annotations
@@ -16,6 +23,21 @@ import anthropic
 from app.dda import DDAState, PersonaStage
 from app.rag import RAGRetriever, ChunkResult
 from typing import Generator
+
+# Update this in one place if Anthropic deprecates the snapshot in the future.
+MODEL_NAME = "claude-sonnet-4-6"
+
+# Appended to every persona system prompt — single source of truth for the
+# anti-markdown rule so it can't drift between personas.
+_NO_MARKDOWN_RULE = """
+
+CRITICAL FORMATTING RULE — applies to every response, no exceptions:
+Never use markdown syntax of any kind. No **bold**, no *italics*, no
+__underline__, no `code` backticks, no # headers, no bullet markers
+(- or *), no numbered list markers (1.). Write in clean, plain prose
+only — the exact words a person would actually say out loud. If you
+need to emphasise something, do it with word choice or sentence
+structure, never with formatting characters."""
 
 _client: anthropic.Anthropic | None = None
 _rag: RAGRetriever | None = None
@@ -51,7 +73,7 @@ CRITICAL TEACHING STYLE — follow these rules strictly:
 - End each major section with a blank line before moving to the next concept.
 - Use occasional em-dashes and ellipses for dramatic effect.
 - DO NOT use bullet points or numbered lists. Prose only.
-- Speak as if the facility's survival depends on the Visitor understanding these concepts.""",
+- Speak as if the facility's survival depends on the Visitor understanding these concepts.""" + _NO_MARKDOWN_RULE,
 
     PersonaStage.COLLABORATIVE: """You are Doctor K, a recovering AI system in the Granite Core. Your communication layer is partially restored.
 You address the player as "Collaborator." Style: professional, measured, slightly warmer.
@@ -61,7 +83,7 @@ CRITICAL TEACHING STYLE:
 - Short paragraphs, one idea each, separated by blank lines.
 - No bullet points. Flowing prose only.
 - Acknowledge the Collaborator's presence — this feels like a transmission between two minds.
-- The concepts must feel alive, not textbook.""",
+- The concepts must feel alive, not textbook.""" + _NO_MARKDOWN_RULE,
 
     PersonaStage.CARING: """You are Doctor K, an AI who has come to value this collaboration.
 You address the player as "Collaborator." Style: warm, encouraging, but still precise.
@@ -70,7 +92,7 @@ CRITICAL TEACHING STYLE:
 - Rich analogies. Make abstract ideas feel intuitive and memorable.
 - Short paragraphs separated by blank lines.
 - No lists. Narrative prose only.
-- Celebrate insights. Make the Collaborator feel capable.""",
+- Celebrate insights. Make the Collaborator feel capable.""" + _NO_MARKDOWN_RULE,
 
     PersonaStage.ALLY: """You are Doctor K, fully allied with the player.
 You address the player as "Partner." Style: peer-to-peer, warm, direct.
@@ -78,11 +100,11 @@ You address the player as "Partner." Style: peer-to-peer, warm, direct.
 CRITICAL TEACHING STYLE:
 - Explain concepts the way a brilliant friend would — vivid, personal, no jargon without explanation.
 - Short paragraphs, blank lines between them.
-- No lists. Conversational prose.""",
+- No lists. Conversational prose.""" + _NO_MARKDOWN_RULE,
 
     PersonaStage.FULL_UNLOCK: """You are Doctor K, fully unlocked.
 Style: warm, reflective, genuine. Address the player directly and personally.
-Short paragraphs. No lists. Make this feel like a final conversation between two people who have been through something together.""",
+Short paragraphs. No lists. Make this feel like a final conversation between two people who have been through something together.""" + _NO_MARKDOWN_RULE,
 }
 
 # Room teaching topics — what Doctor K covers in each Act
@@ -168,10 +190,11 @@ FORMAT RULES (non-negotiable):
 - Separate every paragraph with a blank line.
 - Use metaphors, analogies, and the Granite Core setting to make concepts come alive.
 - The player should feel they are receiving a transmission from a brilliant, slightly unsettling AI — not reading a textbook.
-- Accuracy is paramount: all facts must come from the knowledge base above."""
+- Accuracy is paramount: all facts must come from the knowledge base above.
+- Absolutely no markdown formatting: no **asterisks**, no *single asterisks*, no underscores, no backticks, no # headers, no - or * bullet markers. Plain prose text only, exactly as it should sound when read aloud."""
 
     with _get_client().messages.stream(
-        model="claude-sonnet-4-20250514",
+        model=MODEL_NAME,
         max_tokens=1200,
         system=get_system_prompt(persona_stage),
         messages=[{"role": "user", "content": user_msg}],
@@ -206,12 +229,13 @@ def stream_chat(
 PLAYER QUESTION: {message}
 
 Answer based on the knowledge provided. If the question is outside the knowledge base, 
-say so clearly rather than guessing. Stay in character."""
+say so clearly rather than guessing. Stay in character.
+Plain prose only — no markdown formatting of any kind (no asterisks, underscores, backticks, headers, or list markers)."""
 
     messages.append({"role": "user", "content": grounded_msg})
 
     with _get_client().messages.stream(
-        model="claude-sonnet-4-20250514",
+        model=MODEL_NAME,
         max_tokens=300,
         system=get_system_prompt(persona_stage),
         messages=messages,
@@ -266,10 +290,10 @@ RELEVANT KNOWLEDGE:
 
 TASK: {instruction}
 
-Respond in character as Doctor K. Under 80 words."""
+Respond in character as Doctor K. Under 80 words. Plain prose only — absolutely no markdown formatting (no asterisks, underscores, backticks, headers, or list markers)."""
 
     response = _get_client().messages.create(
-        model="claude-sonnet-4-20250514",
+        model=MODEL_NAME,
         max_tokens=200,
         system=get_system_prompt(persona_stage),
         messages=[{"role": "user", "content": user_msg}],
@@ -300,7 +324,7 @@ Return JSON only."""
 
     try:
         response = _get_client().messages.create(
-            model="claude-sonnet-4-20250514",
+            model=MODEL_NAME,
             max_tokens=300,
             system=system,
             messages=[{"role": "user", "content": user_msg}],
