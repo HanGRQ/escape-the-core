@@ -15,10 +15,14 @@ Usage (in DDA engine or API handler):
     print(result.track_b)   # semantic chunks
     print(result.combined)  # deduplicated merge, best chunks first
 
-v2: anonymized_telemetry disabled to silence the harmless
-    "Failed to send telemetry event ... capture() takes 1 positional
+Fixes in this version:
+  - anonymized_telemetry=False: silences the harmless
+    "Failed to send telemetry event … capture() takes 1 positional
     argument but 3 were given" warnings caused by a ChromaDB/PostHog
     version mismatch.
+  - k=0 guard in _track_a and _track_b: ChromaDB raises TypeError when
+    n_results=0. Both methods now return [] immediately when k <= 0,
+    so callers can safely pass k_a=0 or k_b=0 to isolate one track.
 """
 
 from __future__ import annotations
@@ -94,6 +98,10 @@ class RAGRetriever:
         Track B — semantic search:
             Fetches content that best addresses the player's specific
             misconception, scoped to the current room.
+
+        Passing k_a=0 or k_b=0 is safe — that track is skipped and
+        returns an empty list.  This lets callers isolate one track
+        for testing without triggering a ChromaDB TypeError.
         """
         track_a = self._track_a(player_state, room, k_a)
         track_b = self._track_b(wrong_answer, room, k_b)
@@ -102,19 +110,25 @@ class RAGRetriever:
 
     def get_chunk_by_id(self, chunk_id: str) -> ChunkResult | None:
         """Fetch a specific chunk by its ID (for direct Doctor K references)."""
-        res = self._col.get(ids=[chunk_id], include=["documents", "metadatas"])
-        if not res["ids"]:
+        try:
+            res = self._col.get(ids=[chunk_id], include=["documents", "metadatas"])
+            if not res["ids"]:
+                return None
+            return self._to_chunk(
+                chunk_id, res["documents"][0], res["metadatas"][0], 0.0, "direct"
+            )
+        except Exception:
             return None
-        return self._to_chunk(
-            chunk_id, res["documents"][0], res["metadatas"][0], 0.0, "direct"
-        )
 
     # ── Track A ───────────────────────────────────────────────────────────────
 
     def _track_a(self, player_state: str, room: str, k: int) -> list[ChunkResult]:
+        # Guard: ChromaDB raises TypeError if n_results=0
+        if k <= 0:
+            return []
+
         content_types = _TRACK_A_TYPES.get(player_state, ["analogy", "use_case"])
 
-        # ChromaDB $in filter for content_type list
         where: dict = {
             "$and": [
                 {"game_room":    {"$eq": room}},
@@ -136,9 +150,16 @@ class RAGRetriever:
     # ── Track B ───────────────────────────────────────────────────────────────
 
     def _track_b(self, wrong_answer: str, room: str, k: int) -> list[ChunkResult]:
+        # Guard: ChromaDB raises TypeError if n_results=0
+        if k <= 0:
+            return []
+
+        # Fall back to a neutral query if wrong_answer is empty
+        query = wrong_answer.strip() if wrong_answer and wrong_answer.strip() else "general error"
+
         where: dict = {"game_room": {"$eq": room}}
         res = self._col.query(
-            query_texts=[wrong_answer],
+            query_texts=[query],
             n_results=k,
             where=where,
             include=["documents", "metadatas", "distances"],

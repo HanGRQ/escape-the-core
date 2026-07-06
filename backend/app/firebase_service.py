@@ -5,16 +5,21 @@ GDD §6.4 data structure.
 
 Batch-writes DDA events at room completion (not per-attempt) to minimise
 Firestore operations — GDD §8.2 risk mitigation.
+
+v2 changes:
+  - _session_to_dict() now includes help_requested per room, so the
+    Help-Seeking DDA dimension is fully persisted and not lost on page
+    refresh or session restore.
+  - _dict_to_session() restores help_requested from Firestore, defaulting
+    to False for sessions saved before this change.
 """
 
 from __future__ import annotations
 import os
-import json
 from typing import Optional
 import firebase_admin
 from firebase_admin import credentials, firestore
 from app.dda import SessionState, RoomState, PersonaStage, DDAState, AttemptRecord
-import dataclasses
 
 _db: Optional[firestore.Client] = None
 
@@ -25,24 +30,22 @@ def _get_db() -> firestore.Client:
         return _db
 
     if not firebase_admin._apps:
-        # Support two init methods:
-        # 1. GOOGLE_APPLICATION_CREDENTIALS env var pointing to service account JSON
-        # 2. Individual env vars (for environments without a file)
         cred_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
         if cred_path and os.path.exists(cred_path):
             cred = credentials.Certificate(cred_path)
         else:
-            # Build credential dict from individual env vars
             private_key = os.getenv("FIREBASE_PRIVATE_KEY", "").replace("\\n", "\n")
             cred = credentials.Certificate({
-                "type": "service_account",
+                "type":           "service_account",
                 "project_id":     os.getenv("FIREBASE_PROJECT_ID"),
                 "private_key_id": os.getenv("FIREBASE_PRIVATE_KEY_ID"),
                 "private_key":    private_key,
                 "client_email":   os.getenv("FIREBASE_CLIENT_EMAIL"),
                 "client_id":      os.getenv("FIREBASE_CLIENT_ID"),
-                "auth_uri":       os.getenv("FIREBASE_AUTH_URI", "https://accounts.google.com/o/oauth2/auth"),
-                "token_uri":      os.getenv("FIREBASE_TOKEN_URI", "https://oauth2.googleapis.com/token"),
+                "auth_uri":       os.getenv("FIREBASE_AUTH_URI",
+                                            "https://accounts.google.com/o/oauth2/auth"),
+                "token_uri":      os.getenv("FIREBASE_TOKEN_URI",
+                                            "https://oauth2.googleapis.com/token"),
             })
         firebase_admin.initialize_app(cred)
 
@@ -73,7 +76,7 @@ def load_session(user_id: str, session_id: str) -> Optional[SessionState]:
             return None
         return _dict_to_session(snap.to_dict())
     except Exception:
-        return None  # Firestore unavailable — caller falls back to in-memory
+        return None
 
 
 def save_session(session: SessionState) -> None:
@@ -84,7 +87,7 @@ def save_session(session: SessionState) -> None:
           .collection("game_progress").document(session.session_id) \
           .set(doc, merge=True)
     except Exception:
-        pass  # Firestore unavailable — session kept in memory
+        pass
 
 
 def get_user_sessions(user_id: str) -> list[dict]:
@@ -100,6 +103,19 @@ def get_user_sessions(user_id: str) -> list[dict]:
 # ── DDA event batch-write (called at room completion) ─────────────────────────
 
 def flush_dda_events(session: SessionState, room_id: str) -> None:
+    """
+    Write the full attempt history for a completed room to Firestore.
+    Called once per room at completion — not on every individual attempt —
+    to keep Firestore write counts low (GDD §8.2).
+
+    Each event record includes:
+      attempt      — 1-based attempt number
+      is_correct   — whether the answer was correct
+      time_ms      — response latency in milliseconds (DDA latency dimension)
+      answer       — the player's answer text
+      dda_state    — the DDA state that was computed for this attempt
+      timestamp    — Unix timestamp of the attempt
+    """
     try:
         db = _get_db()
         room = session.rooms.get(room_id)
@@ -121,7 +137,7 @@ def flush_dda_events(session: SessionState, room_id: str) -> None:
           .collection("dda_events").document(room_id) \
           .set({"room_id": room_id, "events": events})
     except Exception:
-        pass  # Firestore unavailable
+        pass
 
 
 # ── Serialisation helpers ─────────────────────────────────────────────────────
@@ -135,7 +151,12 @@ def _session_to_dict(s: SessionState) -> dict:
             "attempts":           room.attempts,
             "consecutive_errors": room.consecutive_errors,
             "current_state":      room.current_state,
-            # history stored separately via flush_dda_events
+            # v2: persists the help_requested flag so the Help-Seeking
+            # DDA dimension survives page refreshes and session restores.
+            # Previously this was only kept in memory and lost on reload,
+            # which meant Doctor K's persona/hint state could reset
+            # unexpectedly mid-session.
+            "help_requested":     room.help_requested,
         }
     return {
         "session_id":     s.session_id,
@@ -159,6 +180,10 @@ def _dict_to_session(d: dict) -> SessionState:
             attempts=rdata.get("attempts", 0),
             consecutive_errors=rdata.get("consecutive_errors", 0),
             current_state=rdata.get("current_state", DDAState.FLOW),
+            # v2: restore help_requested from Firestore.
+            # Defaults to False for sessions saved before this change
+            # so existing records are not broken.
+            help_requested=rdata.get("help_requested", False),
         )
     return SessionState(
         session_id=d["session_id"],

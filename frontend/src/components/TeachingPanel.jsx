@@ -8,7 +8,7 @@ import { stripMarkdown } from '../utils/textFormat'
  */
 function TypewriterText({ text, speed = 14, onDone }) {
   const [displayed, setDisplayed] = useState('')
-  const idxRef = useRef(0)
+  const idxRef  = useRef(0)
   const timerRef = useRef(null)
 
   useEffect(() => {
@@ -39,7 +39,7 @@ function TypewriterText({ text, speed = 14, onDone }) {
       onClick={skip}
       className="font-mono text-base leading-[1.85] cursor-pointer"
       style={{ color: '#E8F4FD' }}
-      title="Click to skip"
+      title="Click to skip typewriter effect"
     >
       {displayed}
       {displayed.length < text.length && (
@@ -57,16 +57,17 @@ function TypewriterText({ text, speed = 14, onDone }) {
 /**
  * TeachingPanel — right-side reading panel for Doctor K's lecture.
  *
- * Shows ONE paragraph at a time. The first paragraph appears as soon as
- * it streams in; clicking "CONTINUE" replaces it with the next one —
- * only the CURRENT paragraph is ever on screen, nothing accumulates.
- * "BEGIN TASK" only appears once every paragraph has been shown AND the
- * stream itself has finished (teachDone).
+ * Shows ONE paragraph at a time. After the typewriter effect finishes,
+ * two buttons appear side by side in the footer:
  *
- * Each paragraph passes through stripMarkdown() before display, removing
- * any stray markdown emphasis, inline code, or header markup that
- * occasionally leaks through from the LLM despite the "plain prose only"
- * system prompt instructions.
+ *   [ CONTINUE → ]   — reveals the next paragraph (existing behaviour)
+ *   [ SKIP ]         — skips ALL remaining teaching content and goes
+ *                      straight to the task (calls onBeginTask immediately)
+ *
+ * SKIP is always visible during the teaching phase (whenever there is
+ * content to skip), so the player can jump straight to the task at any
+ * point — even mid-paragraph — without having to click through every
+ * paragraph first.
  *
  * Props:
  *   accent        hex colour for this act
@@ -74,7 +75,7 @@ function TypewriterText({ text, speed = 14, onDone }) {
  *   text          the full streaming buffer so far
  *   isStreaming   bool — true while still receiving chunks
  *   teachDone     bool — true once the stream has finished
- *   onBeginTask   () => void — called when the player clicks BEGIN TASK
+ *   onBeginTask   () => void — called when the player clicks BEGIN TASK or SKIP
  */
 export function TeachingPanel({ accent, title, text, isStreaming, teachDone, onBeginTask }) {
   const allParas = (text || '')
@@ -82,12 +83,10 @@ export function TeachingPanel({ accent, title, text, isStreaming, teachDone, onB
     .map(p => stripMarkdown(p.trim()))
     .filter(Boolean)
 
-  // 1-based count of how many paragraphs have been reached so far.
-  // The CURRENT paragraph shown on screen is allParas[revealedCount - 1].
   const [revealedCount, setRevealedCount] = useState(0)
-  const [typingDone, setTypingDone] = useState(false)
+  const [typingDone, setTypingDone]       = useState(false)
 
-  // Auto-show the very first paragraph the moment it's available.
+  // Auto-reveal the first paragraph the moment it arrives
   useEffect(() => {
     if (revealedCount === 0 && allParas.length > 0) {
       setRevealedCount(1)
@@ -100,6 +99,11 @@ export function TeachingPanel({ accent, title, text, isStreaming, teachDone, onB
   const showBeginTask = typingDone && !hasMore && teachDone && !isStreaming
   const stillToCome   = typingDone && !hasMore && (isStreaming || !teachDone)
 
+  // SKIP is visible any time there is teaching content on screen, regardless
+  // of whether the typewriter is still running or more paragraphs are queued.
+  // It is hidden only after BEGIN TASK has already appeared (teaching complete).
+  const showSkip = revealedCount > 0 && !showBeginTask
+
   const currentPara = allParas[revealedCount - 1] || ''
 
   const handleContinue = () => {
@@ -109,8 +113,16 @@ export function TeachingPanel({ accent, title, text, isStreaming, teachDone, onB
     }
   }
 
+  // Skip directly calls onBeginTask — same outcome as clicking BEGIN TASK,
+  // but available at any point during teaching without waiting for every
+  // paragraph to be revealed.
+  const handleSkip = () => {
+    onBeginTask?.()
+  }
+
   return (
     <div className="h-full flex flex-col">
+      {/* Title bar */}
       <div className="flex items-center gap-3 px-2 pb-4 flex-shrink-0">
         <div className="w-1 h-5" style={{ background: accent }} />
         <span className="font-display text-sm tracking-widest" style={{ color: accent }}>
@@ -123,6 +135,7 @@ export function TeachingPanel({ accent, title, text, isStreaming, teachDone, onB
         )}
       </div>
 
+      {/* Current paragraph */}
       <div className="flex-1 min-h-0 overflow-y-auto px-2">
         <AnimatePresence mode="wait">
           {currentPara && (
@@ -135,7 +148,8 @@ export function TeachingPanel({ accent, title, text, isStreaming, teachDone, onB
               className="w-full"
             >
               {typingDone ? (
-                <p className="font-mono text-base leading-[1.85]" style={{ color: '#E8F4FD' }}>
+                <p className="font-mono text-base leading-[1.85]"
+                  style={{ color: '#E8F4FD' }}>
                   {currentPara}
                 </p>
               ) : (
@@ -155,7 +169,8 @@ export function TeachingPanel({ accent, title, text, isStreaming, teachDone, onB
         )}
       </div>
 
-      <div className="flex-shrink-0 pt-4 px-2 flex items-center gap-4">
+      {/* Footer — CONTINUE / BEGIN TASK / SKIP */}
+      <div className="flex-shrink-0 pt-4 px-2 flex items-center gap-3">
         <AnimatePresence mode="wait">
           {showContinue && (
             <motion.button
@@ -168,6 +183,7 @@ export function TeachingPanel({ accent, title, text, isStreaming, teachDone, onB
               [ CONTINUE → ]
             </motion.button>
           )}
+
           {showBeginTask && (
             <motion.button
               key="begin"
@@ -182,6 +198,7 @@ export function TeachingPanel({ accent, title, text, isStreaming, teachDone, onB
               [ BEGIN TASK → ]
             </motion.button>
           )}
+
           {stillToCome && (
             <motion.span
               key="waiting"
@@ -192,6 +209,27 @@ export function TeachingPanel({ accent, title, text, isStreaming, teachDone, onB
             >
               receiving more…
             </motion.span>
+          )}
+        </AnimatePresence>
+
+        {/* SKIP — always visible during teaching, jumps straight to the task */}
+        <AnimatePresence>
+          {showSkip && (
+            <motion.button
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              onClick={handleSkip}
+              className="px-4 py-2.5 font-display text-xs tracking-widest rounded
+                         transition-all hover:opacity-80"
+              style={{
+                border: `1px solid ${accent}44`,
+                color: accent,
+                background: 'transparent',
+                opacity: 0.55,
+              }}
+              title="Skip all teaching content and go straight to the task"
+            >
+              SKIP
+            </motion.button>
           )}
         </AnimatePresence>
       </div>
