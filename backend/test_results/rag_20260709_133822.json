@@ -1,0 +1,1487 @@
+{
+  "suite": "RAG Dual-Track Retrieval",
+  "timestamp": "20260709_133822",
+  "passed": 123,
+  "failed": 0,
+  "total": 123,
+  "all_passed": true,
+  "distance_statistics": {
+    "avg_dist": 0.6796,
+    "avg_sim_pct": 32.0,
+    "min_dist": 0.4205,
+    "min_sim_pct": 58.0,
+    "max_dist": 0.8836,
+    "max_sim_pct": 11.6,
+    "by_combination": {
+      "room_1/confused": {
+        "top_dist": 0.7801,
+        "sim_pct": 22.0
+      },
+      "room_1/struggling": {
+        "top_dist": 0.7224,
+        "sim_pct": 27.8
+      },
+      "room_1/stuck": {
+        "top_dist": 0.6543,
+        "sim_pct": 34.6
+      },
+      "room_2/confused": {
+        "top_dist": 0.8836,
+        "sim_pct": 11.6
+      },
+      "room_2/struggling": {
+        "top_dist": 0.8585,
+        "sim_pct": 14.1
+      },
+      "room_2/stuck": {
+        "top_dist": 0.5061,
+        "sim_pct": 49.4
+      },
+      "room_3/confused": {
+        "top_dist": 0.671,
+        "sim_pct": 32.9
+      },
+      "room_3/struggling": {
+        "top_dist": 0.6198,
+        "sim_pct": 38.0
+      },
+      "room_3/stuck": {
+        "top_dist": 0.4205,
+        "sim_pct": 58.0
+      }
+    }
+  },
+  "results": [
+    {
+      "section": "A. Basic retrieval — 9 room × DDA-state combinations",
+      "label": "room_1 / confused → combined not empty",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "track_a": 2,
+        "track_b": 3,
+        "combined": 5,
+        "top_chunk_id": "L1_C01",
+        "top_dist": 0.7801,
+        "top_sim_pct": 22.0
+      }
+    },
+    {
+      "section": "A. Basic retrieval — 9 room × DDA-state combinations",
+      "label": "room_1 / struggling → combined not empty",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "track_a": 2,
+        "track_b": 3,
+        "combined": 5,
+        "top_chunk_id": "L1_C02",
+        "top_dist": 0.7224,
+        "top_sim_pct": 27.8
+      }
+    },
+    {
+      "section": "A. Basic retrieval — 9 room × DDA-state combinations",
+      "label": "room_1 / stuck → combined not empty",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "track_a": 0,
+        "track_b": 3,
+        "combined": 3,
+        "top_chunk_id": "L1_C10",
+        "top_dist": 0.6543,
+        "top_sim_pct": 34.6
+      }
+    },
+    {
+      "section": "A. Basic retrieval — 9 room × DDA-state combinations",
+      "label": "room_2 / confused → combined not empty",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "track_a": 1,
+        "track_b": 3,
+        "combined": 3,
+        "top_chunk_id": "L2_C01",
+        "top_dist": 0.8836,
+        "top_sim_pct": 11.6
+      }
+    },
+    {
+      "section": "A. Basic retrieval — 9 room × DDA-state combinations",
+      "label": "room_2 / struggling → combined not empty",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "track_a": 1,
+        "track_b": 3,
+        "combined": 4,
+        "top_chunk_id": "L2_C12",
+        "top_dist": 0.8585,
+        "top_sim_pct": 14.1
+      }
+    },
+    {
+      "section": "A. Basic retrieval — 9 room × DDA-state combinations",
+      "label": "room_2 / stuck → combined not empty",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "track_a": 0,
+        "track_b": 3,
+        "combined": 3,
+        "top_chunk_id": "L2_C08",
+        "top_dist": 0.5061,
+        "top_sim_pct": 49.4
+      }
+    },
+    {
+      "section": "A. Basic retrieval — 9 room × DDA-state combinations",
+      "label": "room_3 / confused → combined not empty",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "track_a": 2,
+        "track_b": 3,
+        "combined": 4,
+        "top_chunk_id": "L3_C04",
+        "top_dist": 0.671,
+        "top_sim_pct": 32.9
+      }
+    },
+    {
+      "section": "A. Basic retrieval — 9 room × DDA-state combinations",
+      "label": "room_3 / struggling → combined not empty",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "track_a": 2,
+        "track_b": 3,
+        "combined": 4,
+        "top_chunk_id": "L3_C07",
+        "top_dist": 0.6198,
+        "top_sim_pct": 38.0
+      }
+    },
+    {
+      "section": "A. Basic retrieval — 9 room × DDA-state combinations",
+      "label": "room_3 / stuck → combined not empty",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "track_a": 0,
+        "track_b": 3,
+        "combined": 3,
+        "top_chunk_id": "L3_C02",
+        "top_dist": 0.4205,
+        "top_sim_pct": 58.0
+      }
+    },
+    {
+      "section": "B. Room isolation — no cross-room leakage",
+      "label": "room_1: no chunks from other rooms in combined",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "combined": 4,
+        "bad_chunks": []
+      }
+    },
+    {
+      "section": "B. Room isolation — no cross-room leakage",
+      "label": "room_1: Track A chunks all belong to room_1",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "bad_track_a": []
+      }
+    },
+    {
+      "section": "B. Room isolation — no cross-room leakage",
+      "label": "room_2: no chunks from other rooms in combined",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "combined": 4,
+        "bad_chunks": []
+      }
+    },
+    {
+      "section": "B. Room isolation — no cross-room leakage",
+      "label": "room_2: Track A chunks all belong to room_2",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "bad_track_a": []
+      }
+    },
+    {
+      "section": "B. Room isolation — no cross-room leakage",
+      "label": "room_3: no chunks from other rooms in combined",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "combined": 4,
+        "bad_chunks": []
+      }
+    },
+    {
+      "section": "B. Room isolation — no cross-room leakage",
+      "label": "room_3: Track A chunks all belong to room_3",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "bad_track_a": []
+      }
+    },
+    {
+      "section": "C. Track A quality — metadata fields correct",
+      "label": "room_1/confused: L1_C01 content_type ∈ allowed",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L1_C01",
+        "content_type": "concept",
+        "difficulty": "basic",
+        "dist": 0.7801,
+        "sim_pct": 22.0
+      }
+    },
+    {
+      "section": "C. Track A quality — metadata fields correct",
+      "label": "room_1/confused: L1_C01 difficulty='basic'",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L1_C01",
+        "content_type": "concept",
+        "difficulty": "basic",
+        "dist": 0.7801,
+        "sim_pct": 22.0
+      }
+    },
+    {
+      "section": "C. Track A quality — metadata fields correct",
+      "label": "room_1/confused: L1_C07 content_type ∈ allowed",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L1_C07",
+        "content_type": "use_case",
+        "difficulty": "basic",
+        "dist": 0.7925,
+        "sim_pct": 20.8
+      }
+    },
+    {
+      "section": "C. Track A quality — metadata fields correct",
+      "label": "room_1/confused: L1_C07 difficulty='basic'",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L1_C07",
+        "content_type": "use_case",
+        "difficulty": "basic",
+        "dist": 0.7925,
+        "sim_pct": 20.8
+      }
+    },
+    {
+      "section": "C. Track A quality — metadata fields correct",
+      "label": "room_1/confused: L1_C04 content_type ∈ allowed",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L1_C04",
+        "content_type": "use_case",
+        "difficulty": "basic",
+        "dist": 0.8448,
+        "sim_pct": 15.5
+      }
+    },
+    {
+      "section": "C. Track A quality — metadata fields correct",
+      "label": "room_1/confused: L1_C04 difficulty='basic'",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L1_C04",
+        "content_type": "use_case",
+        "difficulty": "basic",
+        "dist": 0.8448,
+        "sim_pct": 15.5
+      }
+    },
+    {
+      "section": "C. Track A quality — metadata fields correct",
+      "label": "room_1/struggling: L1_C02 content_type ∈ allowed",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L1_C02",
+        "content_type": "analogy",
+        "difficulty": "basic",
+        "dist": 0.7224,
+        "sim_pct": 27.8
+      }
+    },
+    {
+      "section": "C. Track A quality — metadata fields correct",
+      "label": "room_1/struggling: L1_C02 difficulty='basic'",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L1_C02",
+        "content_type": "analogy",
+        "difficulty": "basic",
+        "dist": 0.7224,
+        "sim_pct": 27.8
+      }
+    },
+    {
+      "section": "C. Track A quality — metadata fields correct",
+      "label": "room_1/struggling: L1_C07 content_type ∈ allowed",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L1_C07",
+        "content_type": "use_case",
+        "difficulty": "basic",
+        "dist": 0.7925,
+        "sim_pct": 20.8
+      }
+    },
+    {
+      "section": "C. Track A quality — metadata fields correct",
+      "label": "room_1/struggling: L1_C07 difficulty='basic'",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L1_C07",
+        "content_type": "use_case",
+        "difficulty": "basic",
+        "dist": 0.7925,
+        "sim_pct": 20.8
+      }
+    },
+    {
+      "section": "C. Track A quality — metadata fields correct",
+      "label": "room_1/struggling: L1_C04 content_type ∈ allowed",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L1_C04",
+        "content_type": "use_case",
+        "difficulty": "basic",
+        "dist": 0.8448,
+        "sim_pct": 15.5
+      }
+    },
+    {
+      "section": "C. Track A quality — metadata fields correct",
+      "label": "room_1/struggling: L1_C04 difficulty='basic'",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L1_C04",
+        "content_type": "use_case",
+        "difficulty": "basic",
+        "dist": 0.8448,
+        "sim_pct": 15.5
+      }
+    },
+    {
+      "section": "C. Track A quality — metadata fields correct",
+      "label": "room_2/confused: L2_C01 content_type ∈ allowed",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L2_C01",
+        "content_type": "concept",
+        "difficulty": "basic",
+        "dist": 0.8836,
+        "sim_pct": 11.6
+      }
+    },
+    {
+      "section": "C. Track A quality — metadata fields correct",
+      "label": "room_2/confused: L2_C01 difficulty='basic'",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L2_C01",
+        "content_type": "concept",
+        "difficulty": "basic",
+        "dist": 0.8836,
+        "sim_pct": 11.6
+      }
+    },
+    {
+      "section": "C. Track A quality — metadata fields correct",
+      "label": "room_2/struggling: L2_C12 content_type ∈ allowed",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L2_C12",
+        "content_type": "case_study",
+        "difficulty": "basic",
+        "dist": 0.8585,
+        "sim_pct": 14.1
+      }
+    },
+    {
+      "section": "C. Track A quality — metadata fields correct",
+      "label": "room_2/struggling: L2_C12 difficulty='basic'",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L2_C12",
+        "content_type": "case_study",
+        "difficulty": "basic",
+        "dist": 0.8585,
+        "sim_pct": 14.1
+      }
+    },
+    {
+      "section": "C. Track A quality — metadata fields correct",
+      "label": "room_3/confused: L3_C04 content_type ∈ allowed",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L3_C04",
+        "content_type": "step",
+        "difficulty": "basic",
+        "dist": 0.671,
+        "sim_pct": 32.9
+      }
+    },
+    {
+      "section": "C. Track A quality — metadata fields correct",
+      "label": "room_3/confused: L3_C04 difficulty='basic'",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L3_C04",
+        "content_type": "step",
+        "difficulty": "basic",
+        "dist": 0.671,
+        "sim_pct": 32.9
+      }
+    },
+    {
+      "section": "C. Track A quality — metadata fields correct",
+      "label": "room_3/confused: L3_C01 content_type ∈ allowed",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L3_C01",
+        "content_type": "concept",
+        "difficulty": "basic",
+        "dist": 0.6785,
+        "sim_pct": 32.1
+      }
+    },
+    {
+      "section": "C. Track A quality — metadata fields correct",
+      "label": "room_3/confused: L3_C01 difficulty='basic'",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L3_C01",
+        "content_type": "concept",
+        "difficulty": "basic",
+        "dist": 0.6785,
+        "sim_pct": 32.1
+      }
+    },
+    {
+      "section": "C. Track A quality — metadata fields correct",
+      "label": "room_3/confused: L3_C03 content_type ∈ allowed",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L3_C03",
+        "content_type": "step",
+        "difficulty": "basic",
+        "dist": 0.6786,
+        "sim_pct": 32.1
+      }
+    },
+    {
+      "section": "C. Track A quality — metadata fields correct",
+      "label": "room_3/confused: L3_C03 difficulty='basic'",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L3_C03",
+        "content_type": "step",
+        "difficulty": "basic",
+        "dist": 0.6786,
+        "sim_pct": 32.1
+      }
+    },
+    {
+      "section": "C. Track A quality — metadata fields correct",
+      "label": "room_3/struggling: L3_C07 content_type ∈ allowed",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L3_C07",
+        "content_type": "challenge_solution",
+        "difficulty": "basic",
+        "dist": 0.6198,
+        "sim_pct": 38.0
+      }
+    },
+    {
+      "section": "C. Track A quality — metadata fields correct",
+      "label": "room_3/struggling: L3_C07 difficulty='basic'",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L3_C07",
+        "content_type": "challenge_solution",
+        "difficulty": "basic",
+        "dist": 0.6198,
+        "sim_pct": 38.0
+      }
+    },
+    {
+      "section": "C. Track A quality — metadata fields correct",
+      "label": "room_3/struggling: L3_C06 content_type ∈ allowed",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L3_C06",
+        "content_type": "challenge_solution",
+        "difficulty": "basic",
+        "dist": 0.6351,
+        "sim_pct": 36.5
+      }
+    },
+    {
+      "section": "C. Track A quality — metadata fields correct",
+      "label": "room_3/struggling: L3_C06 difficulty='basic'",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L3_C06",
+        "content_type": "challenge_solution",
+        "difficulty": "basic",
+        "dist": 0.6351,
+        "sim_pct": 36.5
+      }
+    },
+    {
+      "section": "C. Track A quality — metadata fields correct",
+      "label": "room_3/struggling: L3_C04 content_type ∈ allowed",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L3_C04",
+        "content_type": "step",
+        "difficulty": "basic",
+        "dist": 0.671,
+        "sim_pct": 32.9
+      }
+    },
+    {
+      "section": "C. Track A quality — metadata fields correct",
+      "label": "room_3/struggling: L3_C04 difficulty='basic'",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L3_C04",
+        "content_type": "step",
+        "difficulty": "basic",
+        "dist": 0.671,
+        "sim_pct": 32.9
+      }
+    },
+    {
+      "section": "D. Track B quality — all results from queried room",
+      "label": "room_1: Track B chunks all belong to room_1",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "track_b": 3,
+        "bad_chunks": [],
+        "dist_min": 0.859,
+        "dist_max": 0.9658
+      }
+    },
+    {
+      "section": "D. Track B quality — all results from queried room",
+      "label": "room_2: Track B chunks all belong to room_2",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "track_b": 3,
+        "bad_chunks": [],
+        "dist_min": 0.9459,
+        "dist_max": 0.9581
+      }
+    },
+    {
+      "section": "D. Track B quality — all results from queried room",
+      "label": "room_3: Track B chunks all belong to room_3",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "track_b": 3,
+        "bad_chunks": [],
+        "dist_min": 0.9148,
+        "dist_max": 0.9537
+      }
+    },
+    {
+      "section": "E. Merge deduplication — no duplicate chunk_ids in combined",
+      "label": "room_1/confused: combined has no duplicate chunk_ids",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "combined": 6,
+        "duplicates": []
+      }
+    },
+    {
+      "section": "E. Merge deduplication — no duplicate chunk_ids in combined",
+      "label": "room_1/struggling: combined has no duplicate chunk_ids",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "combined": 6,
+        "duplicates": []
+      }
+    },
+    {
+      "section": "E. Merge deduplication — no duplicate chunk_ids in combined",
+      "label": "room_1/stuck: combined has no duplicate chunk_ids",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "combined": 3,
+        "duplicates": []
+      }
+    },
+    {
+      "section": "E. Merge deduplication — no duplicate chunk_ids in combined",
+      "label": "room_2/confused: combined has no duplicate chunk_ids",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "combined": 3,
+        "duplicates": []
+      }
+    },
+    {
+      "section": "E. Merge deduplication — no duplicate chunk_ids in combined",
+      "label": "room_2/struggling: combined has no duplicate chunk_ids",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "combined": 4,
+        "duplicates": []
+      }
+    },
+    {
+      "section": "E. Merge deduplication — no duplicate chunk_ids in combined",
+      "label": "room_2/stuck: combined has no duplicate chunk_ids",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "combined": 3,
+        "duplicates": []
+      }
+    },
+    {
+      "section": "E. Merge deduplication — no duplicate chunk_ids in combined",
+      "label": "room_3/confused: combined has no duplicate chunk_ids",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "combined": 5,
+        "duplicates": []
+      }
+    },
+    {
+      "section": "E. Merge deduplication — no duplicate chunk_ids in combined",
+      "label": "room_3/struggling: combined has no duplicate chunk_ids",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "combined": 5,
+        "duplicates": []
+      }
+    },
+    {
+      "section": "E. Merge deduplication — no duplicate chunk_ids in combined",
+      "label": "room_3/stuck: combined has no duplicate chunk_ids",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "combined": 3,
+        "duplicates": []
+      }
+    },
+    {
+      "section": "F. Semantic relevance smoke tests",
+      "label": "Relevance: 24/7 support → Virtual Assistants (L1_C04)",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "expected_id": "L1_C04",
+        "found": true,
+        "rank": 3,
+        "dist": 0.8448,
+        "sim_pct": 15.5,
+        "track": "A+B",
+        "returned_ids": [
+          "L1_C01",
+          "L1_C07",
+          "L1_C04",
+          "L1_C10",
+          "L1_C06"
+        ]
+      }
+    },
+    {
+      "section": "F. Semantic relevance smoke tests",
+      "label": "Relevance: Classify sentiment → Sentiment Analysis (L1_C05)",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "expected_id": "L1_C05",
+        "found": true,
+        "rank": 4,
+        "dist": 0.5521,
+        "sim_pct": 44.8,
+        "track": "B",
+        "returned_ids": [
+          "L1_C02",
+          "L1_C07",
+          "L1_C04",
+          "L1_C05",
+          "L1_C09",
+          "L1_C10"
+        ]
+      }
+    },
+    {
+      "section": "F. Semantic relevance smoke tests",
+      "label": "Relevance: NetWiz use cases → case study (L1_C10)",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "expected_id": "L1_C10",
+        "found": true,
+        "rank": 1,
+        "dist": 0.4593,
+        "sim_pct": 54.1,
+        "track": "B",
+        "returned_ids": [
+          "L1_C10",
+          "L1_C02",
+          "L1_C07"
+        ]
+      }
+    },
+    {
+      "section": "F. Semantic relevance smoke tests",
+      "label": "Relevance: Multilingual vs Japanese confusion → L2_C10",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "expected_id": "L2_C10",
+        "found": true,
+        "rank": 2,
+        "dist": 0.2429,
+        "sim_pct": 75.7,
+        "track": "B",
+        "returned_ids": [
+          "L2_C01",
+          "L2_C10",
+          "L2_C09",
+          "L2_C06"
+        ]
+      }
+    },
+    {
+      "section": "F. Semantic relevance smoke tests",
+      "label": "Relevance: Content safety → Granite Guardian (L2_C11)",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "expected_id": "L2_C11",
+        "found": true,
+        "rank": 2,
+        "dist": 0.6466,
+        "sim_pct": 35.3,
+        "track": "B",
+        "returned_ids": [
+          "L2_C12",
+          "L2_C11",
+          "L2_C03"
+        ]
+      }
+    },
+    {
+      "section": "F. Semantic relevance smoke tests",
+      "label": "Relevance: Code generation → Granite Code (L2_C08)",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "expected_id": "L2_C08",
+        "found": true,
+        "rank": 1,
+        "dist": 0.5824,
+        "sim_pct": 41.8,
+        "track": "B",
+        "returned_ids": [
+          "L2_C08",
+          "L2_C12",
+          "L2_C01"
+        ]
+      }
+    },
+    {
+      "section": "F. Semantic relevance smoke tests",
+      "label": "Relevance: Missing constraints → Be specific step (L3_C03)",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "expected_id": "L3_C03",
+        "found": true,
+        "rank": 3,
+        "dist": 0.6786,
+        "sim_pct": 32.1,
+        "track": "A",
+        "returned_ids": [
+          "L3_C04",
+          "L3_C01",
+          "L3_C03",
+          "L3_C06",
+          "L3_C05"
+        ]
+      }
+    },
+    {
+      "section": "F. Semantic relevance smoke tests",
+      "label": "Relevance: Vague prompt → challenge-solution (L3_C06)",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "expected_id": "L3_C06",
+        "found": true,
+        "rank": 2,
+        "dist": 0.6351,
+        "sim_pct": 36.5,
+        "track": "A+B",
+        "returned_ids": [
+          "L3_C07",
+          "L3_C06",
+          "L3_C04",
+          "L3_C01",
+          "L3_C02"
+        ]
+      }
+    },
+    {
+      "section": "F. Semantic relevance smoke tests",
+      "label": "Relevance: Complex language/ambiguity → L3_C07",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "expected_id": "L3_C07",
+        "found": true,
+        "rank": 1,
+        "dist": 0.3968,
+        "sim_pct": 60.3,
+        "track": "B",
+        "returned_ids": [
+          "L3_C07",
+          "L3_C05",
+          "L3_C03"
+        ]
+      }
+    },
+    {
+      "section": "G. Edge cases",
+      "label": "Empty wrong_answer does not raise",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "combined": 3
+      }
+    },
+    {
+      "section": "G. Edge cases",
+      "label": "One-word wrong_answer does not raise",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "combined": 3
+      }
+    },
+    {
+      "section": "G. Edge cases",
+      "label": "k_b=0 → track_b is empty",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "track_b": 0
+      }
+    },
+    {
+      "section": "G. Edge cases",
+      "label": "k_a=0 → track_a is empty",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "track_a": 0
+      }
+    },
+    {
+      "section": "G. Edge cases",
+      "label": "k_a=0 → track_b still has results",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "track_b": 2
+      }
+    },
+    {
+      "section": "G. Edge cases",
+      "label": "Very large k values do not raise",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "combined": 7
+      }
+    },
+    {
+      "section": "G. Edge cases",
+      "label": "Large k returns ≤ available chunks",
+      "passed": true,
+      "detail": null,
+      "metrics": {}
+    },
+    {
+      "section": "G. Edge cases",
+      "label": "Unknown DDA state string does not raise",
+      "passed": true,
+      "detail": null,
+      "metrics": {}
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "get_chunk_by_id(L1_C01) returns a ChunkResult",
+      "passed": true,
+      "detail": null,
+      "metrics": {}
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "L1_C01: chunk_id field matches requested ID",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L1_C01",
+        "concept": "Definition of LLM and the human-machine gap",
+        "content_type": "concept",
+        "difficulty": "basic",
+        "content_length": 805
+      }
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "L1_C01: content is non-empty",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L1_C01",
+        "concept": "Definition of LLM and the human-machine gap",
+        "content_type": "concept",
+        "difficulty": "basic",
+        "content_length": 805
+      }
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "L1_C01: concept is non-empty",
+      "passed": true,
+      "detail": null,
+      "metrics": {}
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "get_chunk_by_id(L1_C04) returns a ChunkResult",
+      "passed": true,
+      "detail": null,
+      "metrics": {}
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "L1_C04: chunk_id field matches requested ID",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L1_C04",
+        "concept": "Virtual Assistants",
+        "content_type": "use_case",
+        "difficulty": "basic",
+        "content_length": 756
+      }
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "L1_C04: content is non-empty",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L1_C04",
+        "concept": "Virtual Assistants",
+        "content_type": "use_case",
+        "difficulty": "basic",
+        "content_length": 756
+      }
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "L1_C04: concept is non-empty",
+      "passed": true,
+      "detail": null,
+      "metrics": {}
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "get_chunk_by_id(L1_C10) returns a ChunkResult",
+      "passed": true,
+      "detail": null,
+      "metrics": {}
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "L1_C10: chunk_id field matches requested ID",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L1_C10",
+        "concept": "NetWiz case study — all 6 use cases in action",
+        "content_type": "case_study",
+        "difficulty": "basic",
+        "content_length": 1318
+      }
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "L1_C10: content is non-empty",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L1_C10",
+        "concept": "NetWiz case study — all 6 use cases in action",
+        "content_type": "case_study",
+        "difficulty": "basic",
+        "content_length": 1318
+      }
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "L1_C10: concept is non-empty",
+      "passed": true,
+      "detail": null,
+      "metrics": {}
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "get_chunk_by_id(L2_C01) returns a ChunkResult",
+      "passed": true,
+      "detail": null,
+      "metrics": {}
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "L2_C01: chunk_id field matches requested ID",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L2_C01",
+        "concept": "What is IBM Granite",
+        "content_type": "concept",
+        "difficulty": "basic",
+        "content_length": 645
+      }
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "L2_C01: content is non-empty",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L2_C01",
+        "concept": "What is IBM Granite",
+        "content_type": "concept",
+        "difficulty": "basic",
+        "content_length": 645
+      }
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "L2_C01: concept is non-empty",
+      "passed": true,
+      "detail": null,
+      "metrics": {}
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "get_chunk_by_id(L2_C08) returns a ChunkResult",
+      "passed": true,
+      "detail": null,
+      "metrics": {}
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "L2_C08: chunk_id field matches requested ID",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L2_C08",
+        "concept": "Model: Granite Code",
+        "content_type": "model_spec",
+        "difficulty": "basic",
+        "content_length": 578
+      }
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "L2_C08: content is non-empty",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L2_C08",
+        "concept": "Model: Granite Code",
+        "content_type": "model_spec",
+        "difficulty": "basic",
+        "content_length": 578
+      }
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "L2_C08: concept is non-empty",
+      "passed": true,
+      "detail": null,
+      "metrics": {}
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "get_chunk_by_id(L2_C11) returns a ChunkResult",
+      "passed": true,
+      "detail": null,
+      "metrics": {}
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "L2_C11: chunk_id field matches requested ID",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L2_C11",
+        "concept": "Model: Granite Guardian",
+        "content_type": "model_spec",
+        "difficulty": "basic",
+        "content_length": 573
+      }
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "L2_C11: content is non-empty",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L2_C11",
+        "concept": "Model: Granite Guardian",
+        "content_type": "model_spec",
+        "difficulty": "basic",
+        "content_length": 573
+      }
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "L2_C11: concept is non-empty",
+      "passed": true,
+      "detail": null,
+      "metrics": {}
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "get_chunk_by_id(L2_C12) returns a ChunkResult",
+      "passed": true,
+      "detail": null,
+      "metrics": {}
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "L2_C12: chunk_id field matches requested ID",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L2_C12",
+        "concept": "Case study: e-commerce company using all 6 Granite models",
+        "content_type": "case_study",
+        "difficulty": "basic",
+        "content_length": 944
+      }
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "L2_C12: content is non-empty",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L2_C12",
+        "concept": "Case study: e-commerce company using all 6 Granite models",
+        "content_type": "case_study",
+        "difficulty": "basic",
+        "content_length": 944
+      }
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "L2_C12: concept is non-empty",
+      "passed": true,
+      "detail": null,
+      "metrics": {}
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "get_chunk_by_id(L3_C01) returns a ChunkResult",
+      "passed": true,
+      "detail": null,
+      "metrics": {}
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "L3_C01: chunk_id field matches requested ID",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L3_C01",
+        "concept": "What is a prompt",
+        "content_type": "concept",
+        "difficulty": "basic",
+        "content_length": 821
+      }
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "L3_C01: content is non-empty",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L3_C01",
+        "concept": "What is a prompt",
+        "content_type": "concept",
+        "difficulty": "basic",
+        "content_length": 821
+      }
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "L3_C01: concept is non-empty",
+      "passed": true,
+      "detail": null,
+      "metrics": {}
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "get_chunk_by_id(L3_C06) returns a ChunkResult",
+      "passed": true,
+      "detail": null,
+      "metrics": {}
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "L3_C06: chunk_id field matches requested ID",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L3_C06",
+        "concept": "Challenge: Vague prompts",
+        "content_type": "challenge_solution",
+        "difficulty": "basic",
+        "content_length": 951
+      }
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "L3_C06: content is non-empty",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L3_C06",
+        "concept": "Challenge: Vague prompts",
+        "content_type": "challenge_solution",
+        "difficulty": "basic",
+        "content_length": 951
+      }
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "L3_C06: concept is non-empty",
+      "passed": true,
+      "detail": null,
+      "metrics": {}
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "get_chunk_by_id(L3_C07) returns a ChunkResult",
+      "passed": true,
+      "detail": null,
+      "metrics": {}
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "L3_C07: chunk_id field matches requested ID",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L3_C07",
+        "concept": "Challenge: Complex language and ambiguity",
+        "content_type": "challenge_solution",
+        "difficulty": "basic",
+        "content_length": 985
+      }
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "L3_C07: content is non-empty",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L3_C07",
+        "concept": "Challenge: Complex language and ambiguity",
+        "content_type": "challenge_solution",
+        "difficulty": "basic",
+        "content_length": 985
+      }
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "L3_C07: concept is non-empty",
+      "passed": true,
+      "detail": null,
+      "metrics": {}
+    },
+    {
+      "section": "H. Direct chunk fetch — get_chunk_by_id",
+      "label": "get_chunk_by_id for non-existent ID returns None",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "result": null
+      }
+    },
+    {
+      "section": "I. Content quality — no markdown symbols in chunk content",
+      "label": "L1_C01: content has no markdown formatting",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L1_C01",
+        "markdown_found": false
+      }
+    },
+    {
+      "section": "I. Content quality — no markdown symbols in chunk content",
+      "label": "L1_C04: content has no markdown formatting",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L1_C04",
+        "markdown_found": false
+      }
+    },
+    {
+      "section": "I. Content quality — no markdown symbols in chunk content",
+      "label": "L1_C10: content has no markdown formatting",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L1_C10",
+        "markdown_found": false
+      }
+    },
+    {
+      "section": "I. Content quality — no markdown symbols in chunk content",
+      "label": "L2_C01: content has no markdown formatting",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L2_C01",
+        "markdown_found": false
+      }
+    },
+    {
+      "section": "I. Content quality — no markdown symbols in chunk content",
+      "label": "L2_C08: content has no markdown formatting",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L2_C08",
+        "markdown_found": false
+      }
+    },
+    {
+      "section": "I. Content quality — no markdown symbols in chunk content",
+      "label": "L2_C11: content has no markdown formatting",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L2_C11",
+        "markdown_found": false
+      }
+    },
+    {
+      "section": "I. Content quality — no markdown symbols in chunk content",
+      "label": "L2_C12: content has no markdown formatting",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L2_C12",
+        "markdown_found": false
+      }
+    },
+    {
+      "section": "I. Content quality — no markdown symbols in chunk content",
+      "label": "L3_C01: content has no markdown formatting",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L3_C01",
+        "markdown_found": false
+      }
+    },
+    {
+      "section": "I. Content quality — no markdown symbols in chunk content",
+      "label": "L3_C06: content has no markdown formatting",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L3_C06",
+        "markdown_found": false
+      }
+    },
+    {
+      "section": "I. Content quality — no markdown symbols in chunk content",
+      "label": "L3_C07: content has no markdown formatting",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "chunk_id": "L3_C07",
+        "markdown_found": false
+      }
+    }
+  ]
+}

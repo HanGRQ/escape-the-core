@@ -1,57 +1,63 @@
 """
-Complete RAG Pipeline Test Suite  (with metrics output)
-=========================================================
-Tests the dual-track RAG retriever (GDD §4.4) against the live ChromaDB
-knowledge base. Run build_knowledge_base.py first if the DB is empty.
-
+Complete RAG Pipeline Test Suite  (with metrics output + JSON export)
+=====================================================================
 Usage:
     cd escape-the-core/backend
     python scripts/test_rag.py
 
-Printed metrics
-───────────────
-Each test prints the exact numbers from ChromaDB so you can judge quality:
-
-  • [DIST]       cosine distance between the query vector and the chunk vector
-                   0.00 = identical  |  1.00 = unrelated  |  2.00 = opposite
-  • [SIM %]      similarity = (1 − dist) × 100 %  (higher is better)
-  • [CHUNKS]     number of chunks returned by each track / combined
-  • [TRACK]      "A" = metadata-filtered  |  "B" = semantic search
-  • [TOP RESULT] the single best-matching chunk_id and its concept
+Results are printed to the console AND saved to:
+    backend/test_results/rag_<YYYYMMDD_HHMMSS>.json
 """
 
 import sys
 import re
+import json
+import datetime
 from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app.rag import RAGRetriever, ChunkResult, _TRACK_A_TYPES
 
-# ── Helpers ───────────────────────────────────────────────────────────────────
-
+# ── Report state ──────────────────────────────────────────────────────────────
+RESULTS    = []
 PASS_COUNT = 0
 FAIL_COUNT = 0
+_current_section = ""
 
-def ok(label):
-    global PASS_COUNT; PASS_COUNT += 1
+def _record(label, passed, detail=None, metrics=None):
+    RESULTS.append({
+        "section": _current_section,
+        "label":   label,
+        "passed":  passed,
+        "detail":  detail,
+        "metrics": metrics or {},
+    })
+
+def ok(label, metrics=None):
+    global PASS_COUNT
+    PASS_COUNT += 1
     print(f"  ✓  {label}")
+    _record(label, True, metrics=metrics)
 
-def fail(label, detail=""):
-    global FAIL_COUNT; FAIL_COUNT += 1
+def fail(label, detail="", metrics=None):
+    global FAIL_COUNT
+    FAIL_COUNT += 1
     print(f"  ✗  {label}")
     if detail:
         print(f"       {detail}")
+    _record(label, False, detail, metrics)
 
-def check(label, condition, detail=""):
-    if condition: ok(label)
-    else: fail(label, detail)
+def check(label, condition, detail="", metrics=None):
+    if condition:
+        ok(label, metrics)
+    else:
+        fail(label, detail, metrics)
 
 def sim(dist):
-    """Convert distance to similarity percentage."""
     return max(0.0, (1.0 - dist) * 100.0)
 
 def print_chunks(chunks, label="chunks", max_show=5):
-    """Print a ranked table of chunks with dist and similarity."""
     print(f"       {label} ({len(chunks)} total):")
     if not chunks:
         print("         (none)")
@@ -70,10 +76,11 @@ def metric(key, value, note=""):
     print(f"       {tag:<14} {value}{'  ← ' + note if note else ''}")
 
 def section(title):
+    global _current_section
+    _current_section = title
     print(f"\n── {title} {'─' * max(0, 60 - len(title))}")
 
 # ── Load retriever ────────────────────────────────────────────────────────────
-
 print("Loading RAGRetriever…")
 try:
     r = RAGRetriever()
@@ -90,7 +97,6 @@ KNOWN_CHUNK_IDS = {
 }
 ALL_ROOMS  = ["room_1", "room_2", "room_3"]
 DDA_STATES = ["confused", "struggling", "stuck"]
-
 SAMPLE_WRONG = {
     "room_1": "I selected the wrong LLM use case for this business scenario",
     "room_2": "I placed the task into the wrong Granite model slot",
@@ -98,7 +104,7 @@ SAMPLE_WRONG = {
 }
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# A. BASIC RETRIEVAL — all 9 combinations return at least 1 chunk
+# A. BASIC RETRIEVAL
 # ═══════════════════════════════════════════════════════════════════════════════
 section("A. Basic retrieval — 9 room × DDA-state combinations")
 
@@ -112,19 +118,22 @@ for room in ALL_ROOMS:
         n_a, n_b, n_c = len(result.track_a), len(result.track_b), len(result.combined)
         best = result.combined[0] if result.combined else None
         label = f"{room} / {state}"
-
-        metric("CHUNKS", f"trackA={n_a}  trackB={n_b}  combined={n_c}",
-               label)
+        metric("CHUNKS", f"trackA={n_a}  trackB={n_b}  combined={n_c}", label)
         if best:
             metric("TOP RESULT",
                    f"{best.chunk_id}  dist={best.distance:.4f}  "
                    f"sim={sim(best.distance):.1f}%  [{best.track}]  {best.concept[:40]}")
-
-        check(f"{label} → combined not empty",
-              n_c > 0, f"got {n_c} chunks")
+        m = {
+            "track_a": n_a, "track_b": n_b, "combined": n_c,
+            "top_chunk_id": best.chunk_id if best else None,
+            "top_dist": round(best.distance, 4) if best else None,
+            "top_sim_pct": round(sim(best.distance), 1) if best else None,
+        }
+        check(f"{label} → combined not empty", n_c > 0,
+              f"got {n_c} chunks", metrics=m)
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# B. ROOM ISOLATION — chunks belong to the queried room
+# B. ROOM ISOLATION
 # ═══════════════════════════════════════════════════════════════════════════════
 section("B. Room isolation — no cross-room leakage")
 
@@ -132,19 +141,17 @@ for room in ALL_ROOMS:
     result = r.retrieve_for_dda("confused", "generic wrong answer", room)
     expected_prefix = f"L{room[-1]}_"
     bad = [c for c in result.combined if not c.chunk_id.startswith(expected_prefix)]
-    metric("CHUNKS", f"combined={len(result.combined)}  "
-           f"expected prefix={expected_prefix}  bad={len(bad)}", room)
+    metric("CHUNKS", f"combined={len(result.combined)}  bad={len(bad)}", room)
+    m = {"combined": len(result.combined), "bad_chunks": [c.chunk_id for c in bad]}
     check(f"{room}: no chunks from other rooms in combined",
-          len(bad) == 0,
-          f"leaked: {[c.chunk_id for c in bad]}")
-
+          len(bad) == 0, f"leaked: {[c.chunk_id for c in bad]}", metrics=m)
     bad_a = [c for c in result.track_a if not c.chunk_id.startswith(expected_prefix)]
     check(f"{room}: Track A chunks all belong to {room}",
-          len(bad_a) == 0,
-          f"bad: {[c.chunk_id for c in bad_a]}")
+          len(bad_a) == 0, f"bad: {[c.chunk_id for c in bad_a]}",
+          metrics={"bad_track_a": [c.chunk_id for c in bad_a]})
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# C. TRACK A QUALITY — metadata filters honoured
+# C. TRACK A QUALITY
 # ═══════════════════════════════════════════════════════════════════════════════
 section("C. Track A quality — metadata fields correct")
 
@@ -156,17 +163,19 @@ for room in ALL_ROOMS:
             metric("CHUNK",
                    f"{c.chunk_id}  content_type={c.content_type}  "
                    f"difficulty={c.difficulty}  dist={c.distance:.4f}  "
-                   f"sim={sim(c.distance):.1f}%",
-                   f"{room}/{state}")
-            check(f"{room}/{state}: {c.chunk_id} content_type ∈ allowed set",
+                   f"sim={sim(c.distance):.1f}%", f"{room}/{state}")
+            m = {"chunk_id": c.chunk_id, "content_type": c.content_type,
+                 "difficulty": c.difficulty, "dist": round(c.distance, 4),
+                 "sim_pct": round(sim(c.distance), 1)}
+            check(f"{room}/{state}: {c.chunk_id} content_type ∈ allowed",
                   c.content_type in allowed,
-                  f"{c.content_type} not in {allowed}")
+                  f"{c.content_type} not in {allowed}", metrics=m)
             check(f"{room}/{state}: {c.chunk_id} difficulty='basic'",
                   c.difficulty == "basic",
-                  f"difficulty={c.difficulty}")
+                  f"difficulty={c.difficulty}", metrics=m)
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# D. TRACK B QUALITY — chunks belong to queried room
+# D. TRACK B QUALITY
 # ═══════════════════════════════════════════════════════════════════════════════
 section("D. Track B quality — all results from queried room")
 
@@ -178,9 +187,14 @@ for room in ALL_ROOMS:
         metric("DIST range",
                f"min={min(c.distance for c in result.track_b):.4f}  "
                f"max={max(c.distance for c in result.track_b):.4f}")
+    m = {
+        "track_b": len(result.track_b),
+        "bad_chunks": [c.chunk_id for c in bad_b],
+        "dist_min": round(min((c.distance for c in result.track_b), default=0), 4),
+        "dist_max": round(max((c.distance for c in result.track_b), default=0), 4),
+    }
     check(f"{room}: Track B chunks all belong to {room}",
-          len(bad_b) == 0,
-          f"bad: {[c.chunk_id for c in bad_b]}")
+          len(bad_b) == 0, f"bad: {[c.chunk_id for c in bad_b]}", metrics=m)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # E. MERGE / DEDUPLICATION
@@ -190,18 +204,18 @@ section("E. Merge deduplication — no duplicate chunk_ids in combined")
 for room in ALL_ROOMS:
     for state in DDA_STATES:
         result = r.retrieve_for_dda(state, SAMPLE_WRONG[room], room, k_a=3, k_b=3)
-        ids = [c.chunk_id for c in result.combined]
+        ids   = [c.chunk_id for c in result.combined]
         dupes = [i for i in ids if ids.count(i) > 1]
         metric("CHUNKS",
                f"trackA={len(result.track_a)}  trackB={len(result.track_b)}  "
                f"combined={len(result.combined)}  dupes={len(set(dupes))}",
                f"{room}/{state}")
+        m = {"combined": len(result.combined), "duplicates": list(set(dupes))}
         check(f"{room}/{state}: combined has no duplicate chunk_ids",
-              len(dupes) == 0,
-              f"duplicates: {list(set(dupes))}")
+              len(dupes) == 0, f"duplicates: {list(set(dupes))}", metrics=m)
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# F. SEMANTIC RELEVANCE — wrong answers retrieve the right chunks
+# F. SEMANTIC RELEVANCE
 # ═══════════════════════════════════════════════════════════════════════════════
 section("F. Semantic relevance smoke tests")
 
@@ -239,72 +253,72 @@ RELEVANCE_CASES = [
 for room, state, wrong_answer, expected_id, description in RELEVANCE_CASES:
     result = r.retrieve_for_dda(state, wrong_answer, room, k_a=3, k_b=3)
     all_ids = [c.chunk_id for c in result.combined]
-    found = any(cid == expected_id or cid.startswith(expected_id) for cid in all_ids)
+    found   = any(cid == expected_id or cid.startswith(expected_id) for cid in all_ids)
 
-    # Show the top results with distances regardless of pass/fail
     print_chunks(result.combined[:4], label=f"  results for: {description}")
 
-    # Find the target chunk's rank and distance if present
     target = next((c for c in result.combined if c.chunk_id == expected_id), None)
     if target:
         rank = result.combined.index(target) + 1
         metric("TARGET",
                f"{target.chunk_id}  rank=#{rank}  dist={target.distance:.4f}  "
                f"sim={sim(target.distance):.1f}%  [{target.track}]")
+        m = {"expected_id": expected_id, "found": True, "rank": rank,
+             "dist": round(target.distance, 4), "sim_pct": round(sim(target.distance), 1),
+             "track": target.track, "returned_ids": all_ids}
     else:
         metric("TARGET", f"{expected_id} NOT found in combined results")
+        m = {"expected_id": expected_id, "found": False, "rank": None,
+             "returned_ids": all_ids}
 
     check(f"Relevance: {description}", found,
-          f"Expected '{expected_id}' in {all_ids[:3]}…")
+          f"Expected '{expected_id}' in {all_ids[:3]}…", metrics=m)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # G. EDGE CASES
 # ═══════════════════════════════════════════════════════════════════════════════
 section("G. Edge cases")
 
-# Empty wrong_answer
 try:
     result = r.retrieve_for_dda("confused", "", "room_1")
     metric("CHUNKS", f"combined={len(result.combined)} for empty wrong_answer")
-    check("Empty wrong_answer does not raise", True)
+    check("Empty wrong_answer does not raise", True,
+          metrics={"combined": len(result.combined)})
 except Exception as exc:
     fail("Empty wrong_answer raised an exception", str(exc))
 
-# One-word wrong_answer
 try:
     result = r.retrieve_for_dda("struggling", "no", "room_2")
     metric("CHUNKS", f"combined={len(result.combined)} for one-word wrong_answer")
-    check("One-word wrong_answer does not raise", True)
+    check("One-word wrong_answer does not raise", True,
+          metrics={"combined": len(result.combined)})
 except Exception as exc:
     fail("One-word wrong_answer raised an exception", str(exc))
 
-# k_b=0
 result = r.retrieve_for_dda("confused", "some answer", "room_1", k_a=2, k_b=0)
-metric("CHUNKS", f"trackA={len(result.track_a)}  trackB={len(result.track_b)}",
-       "k_b=0")
+metric("CHUNKS", f"trackA={len(result.track_a)}  trackB={len(result.track_b)}", "k_b=0")
 check("k_b=0 → track_b is empty", len(result.track_b) == 0,
-      f"track_b had {len(result.track_b)} chunks")
+      f"track_b had {len(result.track_b)} chunks",
+      metrics={"track_b": len(result.track_b)})
 
-# k_a=0
 result = r.retrieve_for_dda("confused", "some answer", "room_1", k_a=0, k_b=2)
-metric("CHUNKS", f"trackA={len(result.track_a)}  trackB={len(result.track_b)}",
-       "k_a=0")
+metric("CHUNKS", f"trackA={len(result.track_a)}  trackB={len(result.track_b)}", "k_a=0")
 check("k_a=0 → track_a is empty", len(result.track_a) == 0,
-      f"track_a had {len(result.track_a)} chunks")
+      f"track_a had {len(result.track_a)} chunks",
+      metrics={"track_a": len(result.track_a)})
 check("k_a=0 → track_b still has results", len(result.track_b) > 0,
-      f"track_b had {len(result.track_b)} chunks")
+      f"track_b had {len(result.track_b)} chunks",
+      metrics={"track_b": len(result.track_b)})
 
-# Very large k
 try:
     result = r.retrieve_for_dda("stuck", "large k test", "room_3", k_a=100, k_b=100)
-    metric("CHUNKS", f"combined={len(result.combined)} for k=100",
-           "capped at available docs")
-    check("Very large k values do not raise", True)
+    metric("CHUNKS", f"combined={len(result.combined)} for k=100")
+    check("Very large k values do not raise", True,
+          metrics={"combined": len(result.combined)})
     check("Large k returns ≤ available chunks", len(result.combined) < 200)
 except Exception as exc:
     fail("Very large k values raised an exception", str(exc))
 
-# Unknown DDA state
 try:
     result = r.retrieve_for_dda("unknown_state", "test", "room_1")
     metric("CHUNKS", f"combined={len(result.combined)} for unknown DDA state")
@@ -313,7 +327,7 @@ except Exception as exc:
     fail("Unknown DDA state string raised an exception", str(exc))
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# H. DIRECT CHUNK FETCH (get_chunk_by_id)
+# H. DIRECT CHUNK FETCH
 # ═══════════════════════════════════════════════════════════════════════════════
 section("H. Direct chunk fetch — get_chunk_by_id")
 
@@ -323,27 +337,30 @@ for room, ids in KNOWN_CHUNK_IDS.items():
         check(f"get_chunk_by_id({cid}) returns a ChunkResult",
               chunk is not None, f"expected ChunkResult, got None")
         if chunk:
-            metric("chunk_id", chunk.chunk_id)
-            metric("concept",  chunk.concept[:50])
+            metric("chunk_id",     chunk.chunk_id)
+            metric("concept",      chunk.concept[:50])
             metric("content_type", chunk.content_type)
             metric("difficulty",   chunk.difficulty)
             metric("content len",  len(chunk.content), "characters")
+            m = {"chunk_id": chunk.chunk_id, "concept": chunk.concept,
+                 "content_type": chunk.content_type, "difficulty": chunk.difficulty,
+                 "content_length": len(chunk.content)}
             check(f"{cid}: chunk_id field matches requested ID",
                   chunk.chunk_id == cid,
-                  f"expected={cid!r}, got={chunk.chunk_id!r}")
+                  f"expected={cid!r}, got={chunk.chunk_id!r}", metrics=m)
             check(f"{cid}: content is non-empty",
                   len(chunk.content) > 10,
-                  f"content length={len(chunk.content)}")
+                  f"content length={len(chunk.content)}", metrics=m)
             check(f"{cid}: concept is non-empty", len(chunk.concept) > 0)
 
 chunk = r.get_chunk_by_id("L9_C99_DOES_NOT_EXIST")
 metric("result", chunk, "for non-existent ID")
 check("get_chunk_by_id for non-existent ID returns None",
-      chunk is None,
-      f"expected None, got {chunk!r}")
+      chunk is None, f"expected None, got {chunk!r}",
+      metrics={"result": None if chunk is None else str(chunk)})
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# I. CONTENT QUALITY — no stray markdown in stored chunk content
+# I. CONTENT QUALITY
 # ═══════════════════════════════════════════════════════════════════════════════
 section("I. Content quality — no markdown symbols in chunk content")
 
@@ -356,39 +373,73 @@ for cid in all_known_ids:
         continue
     has_md = bool(MARKDOWN_PATTERN.search(chunk.content))
     metric("markdown found", has_md, cid)
-    check(f"{cid}: content has no markdown formatting",
-          not has_md,
-          f"found in: {chunk.content[:100]}…")
+    check(f"{cid}: content has no markdown formatting", not has_md,
+          f"found in: {chunk.content[:100]}…",
+          metrics={"chunk_id": cid, "markdown_found": has_md})
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# SUMMARY — distance statistics across all 9 combinations
+# DISTANCE STATISTICS SUMMARY
 # ═══════════════════════════════════════════════════════════════════════════════
 section("Overall distance statistics (summary)")
 
 all_top_dists = []
+dist_by_combo = {}
 for room in ALL_ROOMS:
     for state in DDA_STATES:
         res = r.retrieve_for_dda(state, SAMPLE_WRONG[room], room)
         if res.combined:
             d = res.combined[0].distance
             all_top_dists.append(d)
+            dist_by_combo[f"{room}/{state}"] = {
+                "top_dist": round(d, 4), "sim_pct": round(sim(d), 1)}
             print(f"       {room}/{state:<12}  top dist={d:.4f}  sim={sim(d):.1f}%")
 
+dist_stats = {}
 if all_top_dists:
     avg_d = sum(all_top_dists) / len(all_top_dists)
     min_d = min(all_top_dists)
     max_d = max(all_top_dists)
-    print(f"\n       Average top-chunk distance across all 9 combos: {avg_d:.4f}  "
-          f"(sim={sim(avg_d):.1f}%)")
+    dist_stats = {
+        "avg_dist": round(avg_d, 4), "avg_sim_pct": round(sim(avg_d), 1),
+        "min_dist": round(min_d, 4), "min_sim_pct": round(sim(min_d), 1),
+        "max_dist": round(max_d, 4), "max_sim_pct": round(sim(max_d), 1),
+        "by_combination": dist_by_combo,
+    }
+    print(f"\n       Average top-chunk distance: {avg_d:.4f}  (sim={sim(avg_d):.1f}%)")
     print(f"       Best match:  dist={min_d:.4f}  sim={sim(min_d):.1f}%")
     print(f"       Worst match: dist={max_d:.4f}  sim={sim(max_d):.1f}%")
 
-total = PASS_COUNT + FAIL_COUNT
+# ═══════════════════════════════════════════════════════════════════════════════
+# EXPORT RESULTS TO JSON
+# ═══════════════════════════════════════════════════════════════════════════════
+total   = PASS_COUNT + FAIL_COUNT
+passed  = FAIL_COUNT == 0
+ts      = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+out_dir = Path(__file__).resolve().parent.parent / "test_results"
+out_dir.mkdir(exist_ok=True)
+out_file = out_dir / f"rag_{ts}.json"
+
+report = {
+    "suite":      "RAG Dual-Track Retrieval",
+    "timestamp":  ts,
+    "passed":     PASS_COUNT,
+    "failed":     FAIL_COUNT,
+    "total":      total,
+    "all_passed": passed,
+    "distance_statistics": dist_stats,
+    "results":    RESULTS,
+}
+
+with open(out_file, "w", encoding="utf-8") as f:
+    json.dump(report, f, indent=2, ensure_ascii=False)
+
 print(f"\n{'═' * 60}")
-if FAIL_COUNT == 0:
+if passed:
     print(f"  ✓  All {total} tests passed — RAG pipeline verified")
 else:
     print(f"  ✗  {FAIL_COUNT} / {total} tests FAILED")
+print(f"  📄  Report saved to: {out_file}")
 print(f"{'═' * 60}")
-if FAIL_COUNT > 0:
+
+if not passed:
     sys.exit(1)
