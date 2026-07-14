@@ -1,13 +1,18 @@
 """
-FastAPI Backend v2.2 — Firebase-optional.
-Teaching and chat work without Firebase.
-Session-dependent endpoints (submit, complete, quiz) gracefully degrade.
+FastAPI Backend v2.3
+====================
+v2.3 fix: get_hint() now retrieves the player's most recent wrong answer
+from session history and uses the room's actual DDA state (which may be
+STRUGGLING or STUCK, not just CONFUSED) so that:
 
-v2.2 changes:
-  - submit_answer / get_hint now wrap RAG + Doctor K generation in try/except
-    so a transient Claude API or retrieval failure returns a safe fallback
-    message instead of a 500, and the underlying exception is printed to
-    the console for debugging.
+  - Track B semantic search is targeted at the player's specific
+    misconception rather than a fixed "player requested hint" string.
+  - Doctor K's intervention level escalates correctly on repeated hint
+    clicks (CONFUSED → STRUGGLING → STUCK), matching the GDD §5.2
+    three-dimensional monitoring design.
+
+Previously both wrong_answer and dda_state were hardcoded in get_hint(),
+which caused every hint click to produce near-identical responses.
 """
 
 from __future__ import annotations
@@ -26,7 +31,6 @@ from app.dda import DDAEngine, DDAState, PersonaStage, SessionState
 from app.rag import RAGRetriever
 from app.doctor_k import stream_teaching, stream_chat, generate_dda_response, evaluate_prompt
 
-# Firebase is optional — import defensively
 _firebase_available = False
 try:
     from app.firebase_service import (
@@ -42,7 +46,7 @@ except Exception as _fb_err:
     def flush_dda_events(s, r): pass
     def get_user_sessions(uid): return []
 
-app = FastAPI(title="Escape the Core API", version="2.2.0")
+app = FastAPI(title="Escape the Core API", version="2.3.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -53,9 +57,8 @@ app.add_middleware(
 
 _dda = DDAEngine()
 _rag: RAGRetriever | None = None
-
-# In-memory session store (used when Firebase is offline)
 _mem_sessions: dict[str, SessionState] = {}
+
 
 def get_rag() -> RAGRetriever:
     global _rag
@@ -82,7 +85,7 @@ class ChatRequest(BaseModel):
     user_id: str
     message: str
     history: Optional[list[dict]] = []
-    persona: Optional[str] = "cold"   # fallback if session unavailable
+    persona: Optional[str] = "cold"
 
 class CompleteRoomRequest(BaseModel):
     session_id: str
@@ -119,7 +122,6 @@ SSE_HEADERS = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
 # ── Session helpers ────────────────────────────────────────────────────────────
 
 def _get_session(user_id: str, session_id: str) -> Optional[SessionState]:
-    """Load from Firebase, fall back to in-memory store."""
     session = load_session(user_id, session_id)
     if session:
         return session
@@ -130,14 +132,14 @@ def _save(session: SessionState):
     try:
         save_session(session)
     except Exception:
-        pass  # Firebase unavailable — in-memory is fine for this session
+        pass
 
 def _get_persona(user_id: str, session_id: str, fallback: str = "cold") -> str:
     s = _get_session(user_id, session_id)
     return s.persona_stage if s else fallback
 
 
-# ── Streaming endpoints (Firebase-independent) ─────────────────────────────────
+# ── Streaming endpoints ────────────────────────────────────────────────────────
 
 @app.get("/api/room/{room_id}/teach")
 def teach_room(
@@ -146,7 +148,6 @@ def teach_room(
     user_id: str,
     persona: Optional[str] = "cold",
 ):
-    """SSE — Doctor K teaches. Works with or without Firebase."""
     persona_stage = _get_persona(user_id, session_id, persona)
 
     def generate():
@@ -158,12 +159,12 @@ def teach_room(
             print(f"[ERROR] /room/{room_id}/teach failed: {e!r}")
             yield sse_error(str(e))
 
-    return StreamingResponse(generate(), media_type="text/event-stream", headers=SSE_HEADERS)
+    return StreamingResponse(generate(), media_type="text/event-stream",
+                             headers=SSE_HEADERS)
 
 
 @app.post("/api/room/{room_id}/chat")
 def chat_with_doctor_k(room_id: str, req: ChatRequest):
-    """SSE — Player Q&A with Doctor K. Works with or without Firebase."""
     persona_stage = _get_persona(req.user_id, req.session_id, req.persona or "cold")
 
     def generate():
@@ -180,14 +181,14 @@ def chat_with_doctor_k(room_id: str, req: ChatRequest):
             print(f"[ERROR] /room/{room_id}/chat failed: {e!r}")
             yield sse_error(str(e))
 
-    return StreamingResponse(generate(), media_type="text/event-stream", headers=SSE_HEADERS)
+    return StreamingResponse(generate(), media_type="text/event-stream",
+                             headers=SSE_HEADERS)
 
 
 # ── Session endpoints ──────────────────────────────────────────────────────────
 
 @app.post("/api/session/start")
 def start_session(req: StartSessionRequest):
-    # Try Firebase first
     existing = get_user_sessions(req.user_id)
     incomplete = [s for s in existing if not s.get("certificate")]
 
@@ -199,7 +200,6 @@ def start_session(req: StartSessionRequest):
                     "current_room": session.current_room,
                     "persona_stage": session.persona_stage}
 
-    # Create new session (works offline too — stored in _mem_sessions)
     session = SessionState(session_id=str(uuid.uuid4()), user_id=req.user_id)
     _save(session)
 
@@ -214,7 +214,6 @@ def start_session(req: StartSessionRequest):
 def submit_answer(room_id: str, req: SubmitAnswerRequest):
     session = _get_session(req.user_id, req.session_id)
     if not session:
-        # Create ephemeral session so the game still works
         session = SessionState(session_id=req.session_id, user_id=req.user_id)
 
     new_state, show_scaffold = _dda.process_attempt(
@@ -229,10 +228,6 @@ def submit_answer(room_id: str, req: SubmitAnswerRequest):
     doctor_k_msg = ""
 
     if not req.is_correct:
-        # NOTE: RAG retrieval + Claude API generation can fail transiently
-        # (network blip, rate limit, model name issue, etc). Never let that
-        # take down the whole request — the DDA state above is still valid
-        # and must reach the frontend regardless.
         try:
             rag = get_rag()
             result = rag.retrieve_for_dda(
@@ -265,20 +260,82 @@ def submit_answer(room_id: str, req: SubmitAnswerRequest):
 
 @app.get("/api/room/{room_id}/hint")
 def get_hint(room_id: str, session_id: str, user_id: str):
+    """
+    v2.3 fix — two changes from the original implementation:
+
+    1. wrong_answer: instead of the fixed string "player requested hint",
+       we now extract the player's most recent incorrect answer from the
+       room's attempt history.  This makes Track B's semantic search
+       target the actual misconception, so each hint is genuinely
+       tailored to what the player got wrong rather than returning the
+       same generic chunks every time.
+
+    2. effective_state: instead of always passing DDAState.CONFUSED to
+       generate_dda_response(), we use the room's actual current state
+       (which may already be STRUGGLING or STUCK due to earlier wrong
+       answers) and then escalate further based on how many times the
+       hint button has been clicked in this room session.
+       This means:
+         1st hint click  → CONFUSED  (gentle nudge)
+         2nd hint click  → STRUGGLING (analogy + explanation)
+         3rd+ hint click → STUCK     (full walkthrough)
+    """
     session = _get_session(user_id, session_id)
     if not session:
         session = SessionState(session_id=session_id, user_id=user_id)
+
     new_state = _dda.set_help_requested(session, room_id)
+    room = session.get_room(room_id)
+
+    # ── Fix 1: use last wrong answer for targeted RAG ─────────────────────
+    last_wrong = next(
+        (r.answer_given for r in reversed(room.history) if not r.is_correct),
+        ""          # fallback: empty string still works for Track B
+    )
+
+    # ── Fix 2: escalate state on repeated hint clicks ─────────────────────
+    # Count how many times help has been explicitly requested this room.
+    # help_count is derived from the history — each time set_help_requested()
+    # is called it doesn't add a history record, so we track via a simple
+    # attribute we attach to the room object in memory.
+    if not hasattr(room, '_hint_count'):
+        room._hint_count = 0
+    room._hint_count += 1
+
+    if room._hint_count >= 3:
+        effective_state = DDAState.STUCK
+    elif room._hint_count >= 2:
+        effective_state = DDAState.STRUGGLING
+    else:
+        # Use the higher of CONFUSED or the room's current state
+        state_priority = {
+            DDAState.FLOW:       0,
+            DDAState.CONFUSED:   1,
+            DDAState.STRUGGLING: 2,
+            DDAState.STUCK:      3,
+        }
+        effective_state = (
+            new_state
+            if state_priority.get(new_state, 0) >= 1
+            else DDAState.CONFUSED
+        )
+
+    print(f"[HINT] room={room_id} hint_count={room._hint_count} "
+          f"effective_state={effective_state} last_wrong={last_wrong[:40]!r}")
 
     doctor_k_msg = "Hint unavailable — recalibrating."
     try:
         rag = get_rag()
-        result = rag.retrieve_for_dda("confused", "player requested hint", room_id)
+        result = rag.retrieve_for_dda(
+            player_state=effective_state.lower(),
+            wrong_answer=last_wrong if last_wrong else "help requested",
+            room=room_id,
+        )
         doctor_k_msg = generate_dda_response(
-            dda_state=DDAState.CONFUSED,
+            dda_state=effective_state,
             persona_stage=session.persona_stage,
             room_id=room_id,
-            wrong_answer="",
+            wrong_answer=last_wrong,
             hint_chunks=result.combined,
         )
     except Exception as e:
@@ -309,8 +366,10 @@ def evaluate_prompt_endpoint(req: EvaluatePromptRequest):
     except Exception as e:
         print(f"[ERROR] /prompt/evaluate failed: {e!r}")
         return {
-            "scores": {"role": 0, "task": 0, "constraints": 0, "example": 0, "clarity": 0},
-            "total": 0, "missing": [], "suggestion": "Evaluation error. Try again.",
+            "scores": {"role": 0, "task": 0, "constraints": 0,
+                       "example": 0, "clarity": 0},
+            "total": 0, "missing": [],
+            "suggestion": "Evaluation error. Try again.",
         }
 
 
@@ -337,13 +396,17 @@ def get_progress(user_id: str, session_id: str):
         for rid, r in session.rooms.items()
     }
     return {
-        "session_id": session.session_id, "current_room": session.current_room,
-        "persona_stage": session.persona_stage, "rooms": rooms_out,
-        "quiz_completed": session.quiz_completed, "quiz_score": session.quiz_score,
-        "certificate": session.certificate,
+        "session_id":     session.session_id,
+        "current_room":   session.current_room,
+        "persona_stage":  session.persona_stage,
+        "rooms":          rooms_out,
+        "quiz_completed": session.quiz_completed,
+        "quiz_score":     session.quiz_score,
+        "certificate":    session.certificate,
     }
 
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "version": "2.2.0", "firebase": _firebase_available}
+    return {"status": "ok", "version": "2.3.0",
+            "firebase": _firebase_available}

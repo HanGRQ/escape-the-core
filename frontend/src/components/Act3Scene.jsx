@@ -11,6 +11,15 @@ const ACCENT = '#27AE60'
 const BG     = '/assets/backgrounds/background3.png'
 const AVATAR = '/assets/doctors/doctor3.png'
 
+// Labels that match the rubric keys in act3Data.js
+const CRITERION_LABELS = {
+  role:        'Define a Role',
+  task:        'State the Task',
+  constraints: 'Add Constraints',
+  example:     'Include an Example',
+  clarity:     'Use Clear Language',
+}
+
 function ScoreDimension({ label, score, tip }) {
   return (
     <div className="flex items-start gap-3">
@@ -27,7 +36,7 @@ function ScoreDimension({ label, score, tip }) {
         <div className="font-display text-xs tracking-wider"
           style={{ color: score ? '#00FF88' : '#E8F4FD66' }}>{label}</div>
         {!score && tip && (
-          <div className="font-mono text-xs mt-0.5 opacity-60"
+          <div className="font-mono text-xs mt-0.5 opacity-70"
             style={{ color: '#F39C12' }}>{tip}</div>
         )}
       </div>
@@ -61,7 +70,7 @@ export function Act3Scene({ sessionId, userId, personaStage = 'caring', onComple
     setStreaming(true)
     streamRef.current = api.streamTeach('room_3', sid, userId, {
       onChunk: chunk => setTeachText(prev => prev + chunk),
-      onDone: () => { setStreaming(false); setTeachDone(true) },
+      onDone:  () => { setStreaming(false); setTeachDone(true) },
       onError: err => {
         setStreaming(false)
         setTeachText(prev => prev + `\n\n[ Error: ${err} ]`)
@@ -110,12 +119,11 @@ export function Act3Scene({ sessionId, userId, personaStage = 'caring', onComple
     })
   }, [sid, userId, feed])
 
-  // ── Hint handler (Help-Seeking behaviour — GDD §5.2) ─────────────────────
+  // ── Hint handler ──────────────────────────────────────────────────────────
   const handleHintRequest = useCallback(async () => {
     if (hintBusy) return
     setHintBusy(true)
     tracker.setHelpRequested()
-
     try {
       const res = await api.getHint('room_3', sid, userId)
       if (res?.doctor_k_msg) {
@@ -123,8 +131,7 @@ export function Act3Scene({ sessionId, userId, personaStage = 'caring', onComple
           role: 'assistant', content: res.doctor_k_msg, kind: 'dda',
         }])
       }
-    } catch (e) {
-      console.warn('getHint failed:', e.message)
+    } catch {
       setFeed(prev => [...prev, {
         role: 'assistant',
         content: 'Signal interference. Review the four prompting steps.',
@@ -135,7 +142,7 @@ export function Act3Scene({ sessionId, userId, personaStage = 'caring', onComple
     }
   }, [hintBusy, tracker, sid, userId])
 
-  // ── Live evaluation (debounced) ───────────────────────────────────────────
+  // ── Live evaluation (debounced 400ms) ─────────────────────────────────────
   useEffect(() => {
     if (phase !== 'task') return
     clearTimeout(evalTimeoutRef.current)
@@ -146,35 +153,70 @@ export function Act3Scene({ sessionId, userId, personaStage = 'caring', onComple
   }, [promptText, phase])
 
   // ── Prompt submit ─────────────────────────────────────────────────────────
+  // ALL five criteria must be satisfied (total === 5) before the player
+  // can proceed to the Finale.  Previously the threshold was >= 4 which
+  // allowed proceeding with one criterion still unmet.
   const handleSubmit = useCallback(async () => {
     if (!promptText.trim()) return
+
     const result = quickEvaluate(promptText)
     setEvaluation(result)
-    tracker.recordAttempt(result.total >= 4, promptText)
 
-    if (result.total < 4) {
+    // Gate: all 5 criteria required
+    const allPassed = result.total >= 5
+
+    tracker.recordAttempt(allPassed, promptText)
+
+    if (!allPassed) {
+      // Flash to signal failure
       setFlashTrigger(n => n + 1)
+
+      // Build a specific Doctor K message for each unmet criterion,
+      // using the tips provided by quickEvaluate().
+      // This replaces the previous single-line generic message and
+      // makes the guidance actually visible and actionable.
+      const missingLines = result.missing
+        .map(key => {
+          const tip = result.tips?.[key]
+          const label = CRITERION_LABELS[key] || key
+          return tip ? `${label}: ${tip}` : label
+        })
+        .filter(Boolean)
+
+      const feedbackContent = [
+        `Protocol score: ${result.total}/5 — the following criteria are not yet satisfied:`,
+        ...missingLines.map(l => `\u2022 ${l}`),  // bullet points
+      ].join('\n')
+
       setFeed(prev => [...prev, {
         role: 'assistant',
-        content: `Score: ${result.total}/5. Missing: ${result.missing.join(', ')}. Refine your prompt.`,
+        content: feedbackContent,
         kind: 'dda',
       }])
     }
 
+    // Always call submitAnswer so the DDA engine records the attempt
+    // and generates an additional Doctor K response via RAG.
+    // For failed submissions this gives a second, AI-generated layer
+    // of guidance on top of the local criterion-specific feedback above.
     try {
       const res = await api.submitAnswer('room_3', {
         sessionId: sid, userId,
-        isCorrect: result.total >= 4,
+        isCorrect: allPassed,
         timeTakenMs: 5000,
         answerGiven: promptText.slice(0, 200),
       })
-      if (res?.doctor_k_msg)
+      if (res?.doctor_k_msg) {
         setFeed(prev => [...prev, {
           role: 'assistant', content: res.doctor_k_msg, kind: 'dda',
         }])
+      }
     } catch {}
 
-    if (result.total >= 4) setTimeout(() => setTaskComplete(true), 800)
+    // Only unlock the CONTINUE button when all criteria are met
+    if (allPassed) {
+      setTimeout(() => setTaskComplete(true), 800)
+    }
   }, [promptText, tracker, sid, userId])
 
   const handleComplete = useCallback(async () => {
@@ -193,11 +235,13 @@ export function Act3Scene({ sessionId, userId, personaStage = 'caring', onComple
         backgroundSize: 'cover', backgroundPosition: 'center',
       }} />
       <div className="absolute inset-0" style={{
-        background: 'linear-gradient(180deg, rgba(3,20,8,0.55) 0%, rgba(3,8,13,0.85) 100%)',
+        background:
+          'linear-gradient(180deg, rgba(3,20,8,0.55) 0%, rgba(3,8,13,0.85) 100%)',
       }} />
       <div className="absolute inset-0 opacity-[0.05] pointer-events-none" style={{
-        backgroundImage: `linear-gradient(${ACCENT} 1px, transparent 1px),
-                          linear-gradient(90deg, ${ACCENT} 1px, transparent 1px)`,
+        backgroundImage:
+          `linear-gradient(${ACCENT} 1px, transparent 1px),
+           linear-gradient(90deg, ${ACCENT} 1px, transparent 1px)`,
         backgroundSize: '48px 48px',
       }} />
 
@@ -233,8 +277,7 @@ export function Act3Scene({ sessionId, userId, personaStage = 'caring', onComple
           style={{ borderBottom: `1px solid ${ACCENT}33`,
                    background: 'rgba(3,8,13,0.5)' }}>
           <motion.div animate={{ opacity: [1, 0.3, 1] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="flex items-center gap-2">
+            transition={{ duration: 2, repeat: Infinity }} className="flex items-center gap-2">
             <div className="w-1.5 h-1.5 rounded-full"
               style={{ background: ACCENT, boxShadow: `0 0 5px ${ACCENT}` }} />
             <span className="font-display text-xs tracking-widest"
@@ -275,13 +318,19 @@ export function Act3Scene({ sessionId, userId, personaStage = 'caring', onComple
                       {[1,2,3,4,5].map(i => (
                         <div key={i} className="w-3 h-3 rounded-sm"
                           style={{
-                            background: i <= evaluation.total ? ACCENT : `${ACCENT}22`,
-                            boxShadow: i <= evaluation.total ? `0 0 4px ${ACCENT}` : 'none',
+                            background: i <= evaluation.total
+                              ? ACCENT : `${ACCENT}22`,
+                            boxShadow: i <= evaluation.total
+                              ? `0 0 4px ${ACCENT}` : 'none',
                           }} />
                       ))}
                     </div>
                     <span className="font-mono text-xs font-bold"
-                      style={{ color: ACCENT }}>{evaluation.total}/5</span>
+                      style={{ color: evaluation.total >= 5 ? '#00FF88' : ACCENT }}>
+                      {evaluation.total}/5
+                      {evaluation.total >= 5 &&
+                        <span className="ml-1 text-xs" style={{ color: '#00FF88' }}>✓</span>}
+                    </span>
                   </div>
                 )}
               </div>
@@ -297,7 +346,7 @@ export function Act3Scene({ sessionId, userId, personaStage = 'caring', onComple
 
               {/* Split: Input | Preview */}
               <div className="flex-1 min-h-0 flex gap-4">
-                {/* Prompt input */}
+                {/* Prompt input + score */}
                 <div className="flex-1 flex flex-col gap-3 min-w-0">
                   <div className="font-display text-xs tracking-widest opacity-50"
                     style={{ color: ACCENT }}>PROMPT INPUT</div>
@@ -314,35 +363,50 @@ export function Act3Scene({ sessionId, userId, personaStage = 'caring', onComple
                       boxShadow: `inset 0 0 20px ${ACCENT}05`,
                     }}
                   />
+
+                  {/* Per-criterion score — shows tip for each unmet item */}
                   {evaluation && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                       className="rounded-lg p-3 space-y-2"
                       style={{ background: '#0A1A0A', border: `1px solid ${ACCENT}22` }}>
                       {PROMPT_TASK.requirements.map(req => (
-                        <ScoreDimension key={req.key} label={req.label}
+                        <ScoreDimension
+                          key={req.key}
+                          label={req.label}
                           score={evaluation.scores[req.key]}
-                          tip={evaluation.tips[req.key]} />
+                          tip={evaluation.tips?.[req.key]}
+                        />
                       ))}
                     </motion.div>
                   )}
+
+                  {/* Action buttons */}
                   <div className="flex gap-3">
-                    <button onClick={handleSubmit} disabled={!promptText.trim()}
+                    <button
+                      onClick={handleSubmit}
+                      disabled={!promptText.trim()}
                       className="flex-1 py-2.5 font-display text-xs tracking-widest
                                  rounded transition-all disabled:opacity-30"
                       style={{
-                        border: `1px solid ${ACCENT}`, color: '#0D0404',
+                        border: `1px solid ${ACCENT}`,
+                        color: '#0D0404',
                         background: ACCENT,
-                        boxShadow: promptText.trim() ? `0 0 20px ${ACCENT}44` : 'none',
+                        boxShadow: promptText.trim()
+                          ? `0 0 20px ${ACCENT}44` : 'none',
                       }}>
                       [ SUBMIT PROMPT ]
                     </button>
+
+                    {/* CONTINUE only unlocks when all 5 criteria are met */}
                     {taskComplete && (
-                      <motion.button initial={{ opacity: 0, scale: 0.9 }}
+                      <motion.button
+                        initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         onClick={handleComplete}
                         className="px-5 py-2.5 font-display text-xs tracking-widest rounded"
                         style={{
-                          border: '1px solid #9B59B6', color: '#0D0404',
+                          border: '1px solid #9B59B6',
+                          color: '#0D0404',
                           background: '#9B59B6',
                           boxShadow: '0 0 24px #9B59B655',
                         }}>
@@ -350,6 +414,14 @@ export function Act3Scene({ sessionId, userId, personaStage = 'caring', onComple
                       </motion.button>
                     )}
                   </div>
+
+                  {/* Reminder text when submitted but not all criteria met */}
+                  {evaluation && evaluation.total < 5 && evaluation.total > 0 && (
+                    <p className="font-mono text-xs opacity-50 text-center"
+                      style={{ color: '#F39C12' }}>
+                      All 5 criteria must be satisfied before you can continue.
+                    </p>
+                  )}
                 </div>
 
                 <div className="w-px self-stretch"
@@ -370,10 +442,12 @@ export function Act3Scene({ sessionId, userId, personaStage = 'caring', onComple
                         </p>
                     }
                   </div>
+
                   <details className="group">
-                    <summary className="font-display text-xs tracking-widest opacity-40
-                                        cursor-pointer hover:opacity-70 transition-opacity
-                                        list-none flex items-center gap-2"
+                    <summary
+                      className="font-display text-xs tracking-widest opacity-40
+                                 cursor-pointer hover:opacity-70 transition-opacity
+                                 list-none flex items-center gap-2"
                       style={{ color: ACCENT }}>
                       <span className="group-open:rotate-90 transition-transform
                                        inline-block">▶</span>
