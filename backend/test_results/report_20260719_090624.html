@@ -1,0 +1,1897 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Escape the Core — Test Report</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 13px; color: #1a202c; background: #f7fafc;
+    padding: 32px 40px;
+  }
+  h1 { font-size: 22px; font-weight: 700; color: #1a2b4a; margin-bottom: 4px; }
+  .run-time { color: #718096; font-size: 12px; margin-bottom: 28px; }
+  .summary-row { display: flex; gap: 20px; margin-bottom: 36px; flex-wrap: wrap; }
+  .summary-card {
+    background: #fff; border-radius: 8px; padding: 16px 22px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08); min-width: 240px;
+  }
+  .suite-name { font-weight: 700; font-size: 14px; color: #2d3748; }
+  .suite-ts { font-size: 11px; color: #a0aec0; margin-top: 2px; margin-bottom: 8px; }
+  .suite-stats { display: flex; align-items: baseline; gap: 10px; }
+  .big-num { font-size: 26px; font-weight: 800; line-height: 1; }
+  .pct { font-size: 13px; color: #718096; }
+  .all-pass { color: #00c47a; font-size: 12px; font-weight: 600; }
+  .some-fail { color: #e53e3e; font-size: 12px; font-weight: 600; }
+  h2.suite-title {
+    font-size: 17px; font-weight: 700; color: #1a2b4a;
+    margin: 36px 0 16px; padding-bottom: 6px;
+    border-bottom: 2px solid #2e4d7b;
+  }
+  .section-block {
+    background: #fff; border-radius: 8px; margin-bottom: 20px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06); overflow: hidden;
+  }
+  .section-block h3 {
+    font-size: 13px; font-weight: 600; color: #4a5568;
+    padding: 10px 16px; background: #edf2f7;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { background: #f0f4f8; }
+  th {
+    text-align: left; padding: 8px 12px;
+    font-size: 11px; font-weight: 700; color: #718096;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  td {
+    padding: 7px 12px; border-bottom: 1px solid #f0f4f8;
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f7fafc; }
+  .label { font-size: 12px; color: #2d3748; }
+  .metrics { font-size: 11px; color: #4a5568; }
+  .detail { font-size: 11px; color: #e53e3e; font-style: italic; }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 12px;
+    font-size: 10px; font-weight: 700; letter-spacing: 0.05em;
+  }
+  .pass { background: #c6f6d5; color: #22543d; }
+  .fail { background: #fed7d7; color: #742a2a; }
+  code {
+    font-family: "SF Mono", "Fira Code", monospace;
+    font-size: 10.5px; background: #edf2f7;
+    padding: 1px 4px; border-radius: 3px; color: #2b6cb0;
+  }
+  .dist-note { font-size: 11px; color: #718096; padding: 8px 16px 0; }
+  .dist-summary {
+    font-size: 12px; color: #4a5568; padding: 8px 16px 12px;
+  }
+  .bar-bg {
+    background: #e2e8f0; border-radius: 4px; height: 8px;
+    width: 160px; overflow: hidden;
+  }
+  .bar-fill {
+    background: linear-gradient(90deg, #2e4d7b, #00a3e0);
+    height: 100%; border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+  <h1>Escape the Core — Test Report</h1>
+  <div class="run-time">Generated: 2026-07-19 09:06:24</div>
+
+  <div class="summary-row">
+    
+    <div class="summary-card" style="border-left:4px solid #00c47a">
+      <div class="suite-name">DDA State Machine</div>
+      <div class="suite-ts">Run at: 20260709_133809</div>
+      <div class="suite-stats">
+        <span class="big-num" style="color:#00c47a">59/59</span>
+        <span class="pct">(100%)</span>
+        <span class="all-pass">✓ All passed</span>
+      </div>
+    </div>
+    <div class="summary-card" style="border-left:4px solid #00c47a">
+      <div class="suite-name">RAG Dual-Track Retrieval</div>
+      <div class="suite-ts">Run at: 20260709_133822</div>
+      <div class="suite-stats">
+        <span class="big-num" style="color:#00c47a">123/123</span>
+        <span class="pct">(100%)</span>
+        <span class="all-pass">✓ All passed</span>
+      </div>
+    </div>
+    <div class="summary-card" style="border-left:4px solid #00c47a">
+      <div class="suite-name">E2E Integration Tests</div>
+      <div class="suite-ts">Run at: 2026-07-19T09:03:49</div>
+      <div class="suite-stats">
+        <span class="big-num" style="color:#00c47a">24/24</span>
+        <span class="pct">(100%)</span>
+        <span class="all-pass">✓ All passed</span>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="suite-title">DDA State Machine Tests</h2>
+    <div class="section-block">
+      <h3>1. Basic state transitions</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Correct answer → FLOW</td>
+          <td class="metrics"><code>state=DDAState.FLOW</code> &nbsp; <code>consecutive_errors=0</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Correct answer → show_scaffold=False</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Two consecutive errors → STRUGGLING</td>
+          <td class="metrics"><code>state=DDAState.STRUGGLING</code> &nbsp; <code>consecutive_errors=2</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">STRUGGLING → show_scaffold=True</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Three consecutive errors → STUCK</td>
+          <td class="metrics"><code>state=DDAState.STUCK</code> &nbsp; <code>consecutive_errors=3</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">STUCK → show_scaffold=True</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-block">
+      <h3>2. Boundary conditions (exactly at threshold)</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Exactly 1 error → NOT STRUGGLING</td>
+          <td class="metrics"><code>state=DDAState.FLOW</code> &nbsp; <code>consecutive_errors=1</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Exactly 2 errors → STRUGGLING</td>
+          <td class="metrics"><code>state=DDAState.STRUGGLING</code> &nbsp; <code>consecutive_errors=2</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Exactly 3 errors → STUCK</td>
+          <td class="metrics"><code>state=DDAState.STUCK</code> &nbsp; <code>consecutive_errors=3</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">4th consecutive error → stays STUCK</td>
+          <td class="metrics"><code>state=DDAState.STUCK</code></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-block">
+      <h3>3. Latency (slow-response) detection</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Slow response with < 3 prior timings → NOT CONFUSED</td>
+          <td class="metrics"><code>state=DDAState.FLOW</code> &nbsp; <code>n_timings=2</code> &nbsp; <code>ratio=99.0000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Response > 2.0× average → CONFUSED</td>
+          <td class="metrics"><code>state=DDAState.CONFUSED</code> &nbsp; <code>ratio=2.2500</code> &nbsp; <code>last_ms=4500</code> &nbsp; <code>avg_prior_ms=2000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Response just under 2.0× average → NOT CONFUSED</td>
+          <td class="metrics"><code>state=DDAState.FLOW</code> &nbsp; <code>ratio=1.9500</code> &nbsp; <code>last_ms=3900</code></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-block">
+      <h3>4. Help-seeking (hint button)</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Help requested from FLOW → at least CONFUSED</td>
+          <td class="metrics"><code>state=DDAState.CONFUSED</code> &nbsp; <code>help_requested=True</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">help_requested flag set on room</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Wrong answer after help_requested → stays ≥ CONFUSED</td>
+          <td class="metrics"><code>state=DDAState.CONFUSED</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Help requested while STRUGGLING → stays ≥ STRUGGLING</td>
+          <td class="metrics"><code>state=DDAState.STRUGGLING</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Help requested while STUCK → stays STUCK</td>
+          <td class="metrics"><code>state=DDAState.STUCK</code></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-block">
+      <h3>5. State reset after a correct answer</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Correct answer after STRUGGLING → FLOW</td>
+          <td class="metrics"><code>state=DDAState.FLOW</code> &nbsp; <code>consecutive_errors=0</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Consecutive error counter reset to 0</td>
+          <td class="metrics"><code>consecutive_errors=0</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Correct answer after STUCK → FLOW</td>
+          <td class="metrics"><code>state=DDAState.FLOW</code> &nbsp; <code>consecutive_errors=0</code></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-block">
+      <h3>6. Multi-room session isolation</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_2 starts in FLOW regardless of room_1 state</td>
+          <td class="metrics"><code>room_1_state=DDAState.STUCK</code> &nbsp; <code>room_2_state=DDAState.FLOW</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_1 still STUCK after room_2 attempt</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_2 consecutive_errors is 0</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-block">
+      <h3>7. Attempt history recording</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room.attempts counter = 2</td>
+          <td class="metrics"><code>attempts=2</code> &nbsp; <code>history_length=2</code> &nbsp; <code>history_0_ms=1500</code> &nbsp; <code>history_1_ms=3000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">history has 2 entries</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">history[0].is_correct = True</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">history[1].is_correct = False</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">history[0].answer_given stored</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">history[1].time_taken_ms stored</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-block">
+      <h3>8. Persona stage progression</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Initial persona = COLD</td>
+          <td class="metrics"><code>persona=PersonaStage.COLD</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">After room_1 → COLLABORATIVE</td>
+          <td class="metrics"><code>persona=PersonaStage.COLLABORATIVE</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">After room_2 → CARING</td>
+          <td class="metrics"><code>persona=PersonaStage.CARING</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">After room_3 → ALLY</td>
+          <td class="metrics"><code>persona=PersonaStage.ALLY</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Quiz pass (75 %) → FULL_UNLOCK</td>
+          <td class="metrics"><code>persona=PersonaStage.FULL_UNLOCK</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">certificate = True</td>
+          <td class="metrics"><code>certificate=True</code></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-block">
+      <h3>9. mark_room_complete with unrecognised room ID</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Unknown room ID does not advance persona</td>
+          <td class="metrics"><code>persona_before=PersonaStage.COLD</code> &nbsp; <code>persona_after=PersonaStage.COLD</code></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-block">
+      <h3>10. Room-to-room navigation</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Initial current_room = room_1</td>
+          <td class="metrics"><code>current_room=room_1</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">After room_1 complete → room_2</td>
+          <td class="metrics"><code>current_room=room_2</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">After room_2 complete → room_3</td>
+          <td class="metrics"><code>current_room=room_3</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">After room_3 complete → quiz</td>
+          <td class="metrics"><code>current_room=quiz</code></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-block">
+      <h3>11. Quiz pass and fail thresholds</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Score 75 % → certificate=True</td>
+          <td class="metrics"><code>score=0.7500</code> &nbsp; <code>certificate=True</code> &nbsp; <code>persona=PersonaStage.FULL_UNLOCK</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Score 75 % → quiz_completed=True</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Score 100 % → certificate=True</td>
+          <td class="metrics"><code>score=1.0000</code> &nbsp; <code>certificate=True</code> &nbsp; <code>persona=PersonaStage.FULL_UNLOCK</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Score 100 % → quiz_completed=True</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Score 74 % → certificate=False</td>
+          <td class="metrics"><code>score=0.7400</code> &nbsp; <code>certificate=False</code> &nbsp; <code>persona=PersonaStage.COLD</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Score 74 % → quiz_completed=True</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Score 0 % → certificate=False</td>
+          <td class="metrics"><code>score=0.0000</code> &nbsp; <code>certificate=False</code> &nbsp; <code>persona=PersonaStage.COLD</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Score 0 % → quiz_completed=True</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-block">
+      <h3>12. show_scaffold flag correctness</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">0 error(s) → show_scaffold=False</td>
+          <td class="metrics"><code>n_errors=0</code> &nbsp; <code>state=DDAState.FLOW</code> &nbsp; <code>show_scaffold=False</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">1 error(s) → show_scaffold=False</td>
+          <td class="metrics"><code>n_errors=1</code> &nbsp; <code>state=DDAState.FLOW</code> &nbsp; <code>show_scaffold=False</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">2 error(s) → show_scaffold=True</td>
+          <td class="metrics"><code>n_errors=2</code> &nbsp; <code>state=DDAState.STRUGGLING</code> &nbsp; <code>show_scaffold=True</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">3 error(s) → show_scaffold=True</td>
+          <td class="metrics"><code>n_errors=3</code> &nbsp; <code>state=DDAState.STUCK</code> &nbsp; <code>show_scaffold=True</code></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-block">
+      <h3>13. SessionState.get_room auto-creates RoomState</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">rooms dict initially empty</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">get_room creates entry</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">created room has room_id set</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">get_room returns same object</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-block">
+      <h3>14. mark_room_complete sets room.completed and room.score</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room.completed = True</td>
+          <td class="metrics"><code>completed=True</code> &nbsp; <code>score=0.6700</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room.score = 0.67</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div><h2 class="suite-title">RAG Dual-Track Retrieval Tests</h2>
+    <div class="section-block">
+      <h3>RAG Distance Statistics</h3>
+      <p class="dist-note">
+        Distance is cosine distance between query and chunk vectors.
+        0.00 = identical &nbsp;|&nbsp; 1.00 = unrelated.
+        Similarity = (1 − dist) × 100%.
+      </p>
+      <div class="dist-summary">
+        <span>Avg top-chunk distance: <b>0.6796</b>
+          &nbsp;(sim 32.0%)</span>
+        &nbsp;&nbsp;
+        <span>Best: <b>0.4205</b>
+          &nbsp;(58.0%)</span>
+        &nbsp;&nbsp;
+        <span>Worst: <b>0.8836</b>
+          &nbsp;(11.6%)</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Room / DDA state</th>
+            <th style="text-align:right">Top dist</th>
+            <th style="text-align:right">Similarity</th>
+            <th style="min-width:160px">Visual</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><code>room_1/confused</code></td>
+          <td style="text-align:right"><code>0.7801</code></td>
+          <td style="text-align:right"><code>22.0%</code></td>
+          <td>
+            <div class="bar-bg">
+              <div class="bar-fill" style="width:22%"></div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>room_1/struggling</code></td>
+          <td style="text-align:right"><code>0.7224</code></td>
+          <td style="text-align:right"><code>27.8%</code></td>
+          <td>
+            <div class="bar-bg">
+              <div class="bar-fill" style="width:27%"></div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>room_1/stuck</code></td>
+          <td style="text-align:right"><code>0.6543</code></td>
+          <td style="text-align:right"><code>34.6%</code></td>
+          <td>
+            <div class="bar-bg">
+              <div class="bar-fill" style="width:34%"></div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>room_2/confused</code></td>
+          <td style="text-align:right"><code>0.8836</code></td>
+          <td style="text-align:right"><code>11.6%</code></td>
+          <td>
+            <div class="bar-bg">
+              <div class="bar-fill" style="width:11%"></div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>room_2/struggling</code></td>
+          <td style="text-align:right"><code>0.8585</code></td>
+          <td style="text-align:right"><code>14.1%</code></td>
+          <td>
+            <div class="bar-bg">
+              <div class="bar-fill" style="width:14%"></div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>room_2/stuck</code></td>
+          <td style="text-align:right"><code>0.5061</code></td>
+          <td style="text-align:right"><code>49.4%</code></td>
+          <td>
+            <div class="bar-bg">
+              <div class="bar-fill" style="width:49%"></div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>room_3/confused</code></td>
+          <td style="text-align:right"><code>0.6710</code></td>
+          <td style="text-align:right"><code>32.9%</code></td>
+          <td>
+            <div class="bar-bg">
+              <div class="bar-fill" style="width:32%"></div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>room_3/struggling</code></td>
+          <td style="text-align:right"><code>0.6198</code></td>
+          <td style="text-align:right"><code>38.0%</code></td>
+          <td>
+            <div class="bar-bg">
+              <div class="bar-fill" style="width:38%"></div>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td><code>room_3/stuck</code></td>
+          <td style="text-align:right"><code>0.4205</code></td>
+          <td style="text-align:right"><code>58.0%</code></td>
+          <td>
+            <div class="bar-bg">
+              <div class="bar-fill" style="width:58%"></div>
+            </div>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-block">
+      <h3>A. Basic retrieval — 9 room × DDA-state combinations</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_1 / confused → combined not empty</td>
+          <td class="metrics"><code>track_a=2</code> &nbsp; <code>track_b=3</code> &nbsp; <code>combined=5</code> &nbsp; <code>top_chunk_id=L1_C01</code> &nbsp; <code>top_dist=0.7801</code> &nbsp; <code>top_sim_pct=22.0000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_1 / struggling → combined not empty</td>
+          <td class="metrics"><code>track_a=2</code> &nbsp; <code>track_b=3</code> &nbsp; <code>combined=5</code> &nbsp; <code>top_chunk_id=L1_C02</code> &nbsp; <code>top_dist=0.7224</code> &nbsp; <code>top_sim_pct=27.8000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_1 / stuck → combined not empty</td>
+          <td class="metrics"><code>track_a=0</code> &nbsp; <code>track_b=3</code> &nbsp; <code>combined=3</code> &nbsp; <code>top_chunk_id=L1_C10</code> &nbsp; <code>top_dist=0.6543</code> &nbsp; <code>top_sim_pct=34.6000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_2 / confused → combined not empty</td>
+          <td class="metrics"><code>track_a=1</code> &nbsp; <code>track_b=3</code> &nbsp; <code>combined=3</code> &nbsp; <code>top_chunk_id=L2_C01</code> &nbsp; <code>top_dist=0.8836</code> &nbsp; <code>top_sim_pct=11.6000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_2 / struggling → combined not empty</td>
+          <td class="metrics"><code>track_a=1</code> &nbsp; <code>track_b=3</code> &nbsp; <code>combined=4</code> &nbsp; <code>top_chunk_id=L2_C12</code> &nbsp; <code>top_dist=0.8585</code> &nbsp; <code>top_sim_pct=14.1000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_2 / stuck → combined not empty</td>
+          <td class="metrics"><code>track_a=0</code> &nbsp; <code>track_b=3</code> &nbsp; <code>combined=3</code> &nbsp; <code>top_chunk_id=L2_C08</code> &nbsp; <code>top_dist=0.5061</code> &nbsp; <code>top_sim_pct=49.4000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_3 / confused → combined not empty</td>
+          <td class="metrics"><code>track_a=2</code> &nbsp; <code>track_b=3</code> &nbsp; <code>combined=4</code> &nbsp; <code>top_chunk_id=L3_C04</code> &nbsp; <code>top_dist=0.6710</code> &nbsp; <code>top_sim_pct=32.9000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_3 / struggling → combined not empty</td>
+          <td class="metrics"><code>track_a=2</code> &nbsp; <code>track_b=3</code> &nbsp; <code>combined=4</code> &nbsp; <code>top_chunk_id=L3_C07</code> &nbsp; <code>top_dist=0.6198</code> &nbsp; <code>top_sim_pct=38.0000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_3 / stuck → combined not empty</td>
+          <td class="metrics"><code>track_a=0</code> &nbsp; <code>track_b=3</code> &nbsp; <code>combined=3</code> &nbsp; <code>top_chunk_id=L3_C02</code> &nbsp; <code>top_dist=0.4205</code> &nbsp; <code>top_sim_pct=58.0000</code></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-block">
+      <h3>B. Room isolation — no cross-room leakage</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_1: no chunks from other rooms in combined</td>
+          <td class="metrics"><code>combined=4</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_1: Track A chunks all belong to room_1</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_2: no chunks from other rooms in combined</td>
+          <td class="metrics"><code>combined=4</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_2: Track A chunks all belong to room_2</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_3: no chunks from other rooms in combined</td>
+          <td class="metrics"><code>combined=4</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_3: Track A chunks all belong to room_3</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-block">
+      <h3>C. Track A quality — metadata fields correct</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_1/confused: L1_C01 content_type ∈ allowed</td>
+          <td class="metrics"><code>chunk_id=L1_C01</code> &nbsp; <code>content_type=concept</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>dist=0.7801</code> &nbsp; <code>sim_pct=22.0000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_1/confused: L1_C01 difficulty='basic'</td>
+          <td class="metrics"><code>chunk_id=L1_C01</code> &nbsp; <code>content_type=concept</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>dist=0.7801</code> &nbsp; <code>sim_pct=22.0000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_1/confused: L1_C07 content_type ∈ allowed</td>
+          <td class="metrics"><code>chunk_id=L1_C07</code> &nbsp; <code>content_type=use_case</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>dist=0.7925</code> &nbsp; <code>sim_pct=20.8000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_1/confused: L1_C07 difficulty='basic'</td>
+          <td class="metrics"><code>chunk_id=L1_C07</code> &nbsp; <code>content_type=use_case</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>dist=0.7925</code> &nbsp; <code>sim_pct=20.8000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_1/confused: L1_C04 content_type ∈ allowed</td>
+          <td class="metrics"><code>chunk_id=L1_C04</code> &nbsp; <code>content_type=use_case</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>dist=0.8448</code> &nbsp; <code>sim_pct=15.5000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_1/confused: L1_C04 difficulty='basic'</td>
+          <td class="metrics"><code>chunk_id=L1_C04</code> &nbsp; <code>content_type=use_case</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>dist=0.8448</code> &nbsp; <code>sim_pct=15.5000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_1/struggling: L1_C02 content_type ∈ allowed</td>
+          <td class="metrics"><code>chunk_id=L1_C02</code> &nbsp; <code>content_type=analogy</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>dist=0.7224</code> &nbsp; <code>sim_pct=27.8000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_1/struggling: L1_C02 difficulty='basic'</td>
+          <td class="metrics"><code>chunk_id=L1_C02</code> &nbsp; <code>content_type=analogy</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>dist=0.7224</code> &nbsp; <code>sim_pct=27.8000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_1/struggling: L1_C07 content_type ∈ allowed</td>
+          <td class="metrics"><code>chunk_id=L1_C07</code> &nbsp; <code>content_type=use_case</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>dist=0.7925</code> &nbsp; <code>sim_pct=20.8000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_1/struggling: L1_C07 difficulty='basic'</td>
+          <td class="metrics"><code>chunk_id=L1_C07</code> &nbsp; <code>content_type=use_case</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>dist=0.7925</code> &nbsp; <code>sim_pct=20.8000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_1/struggling: L1_C04 content_type ∈ allowed</td>
+          <td class="metrics"><code>chunk_id=L1_C04</code> &nbsp; <code>content_type=use_case</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>dist=0.8448</code> &nbsp; <code>sim_pct=15.5000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_1/struggling: L1_C04 difficulty='basic'</td>
+          <td class="metrics"><code>chunk_id=L1_C04</code> &nbsp; <code>content_type=use_case</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>dist=0.8448</code> &nbsp; <code>sim_pct=15.5000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_2/confused: L2_C01 content_type ∈ allowed</td>
+          <td class="metrics"><code>chunk_id=L2_C01</code> &nbsp; <code>content_type=concept</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>dist=0.8836</code> &nbsp; <code>sim_pct=11.6000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_2/confused: L2_C01 difficulty='basic'</td>
+          <td class="metrics"><code>chunk_id=L2_C01</code> &nbsp; <code>content_type=concept</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>dist=0.8836</code> &nbsp; <code>sim_pct=11.6000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_2/struggling: L2_C12 content_type ∈ allowed</td>
+          <td class="metrics"><code>chunk_id=L2_C12</code> &nbsp; <code>content_type=case_study</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>dist=0.8585</code> &nbsp; <code>sim_pct=14.1000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_2/struggling: L2_C12 difficulty='basic'</td>
+          <td class="metrics"><code>chunk_id=L2_C12</code> &nbsp; <code>content_type=case_study</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>dist=0.8585</code> &nbsp; <code>sim_pct=14.1000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_3/confused: L3_C04 content_type ∈ allowed</td>
+          <td class="metrics"><code>chunk_id=L3_C04</code> &nbsp; <code>content_type=step</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>dist=0.6710</code> &nbsp; <code>sim_pct=32.9000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_3/confused: L3_C04 difficulty='basic'</td>
+          <td class="metrics"><code>chunk_id=L3_C04</code> &nbsp; <code>content_type=step</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>dist=0.6710</code> &nbsp; <code>sim_pct=32.9000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_3/confused: L3_C01 content_type ∈ allowed</td>
+          <td class="metrics"><code>chunk_id=L3_C01</code> &nbsp; <code>content_type=concept</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>dist=0.6785</code> &nbsp; <code>sim_pct=32.1000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_3/confused: L3_C01 difficulty='basic'</td>
+          <td class="metrics"><code>chunk_id=L3_C01</code> &nbsp; <code>content_type=concept</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>dist=0.6785</code> &nbsp; <code>sim_pct=32.1000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_3/confused: L3_C03 content_type ∈ allowed</td>
+          <td class="metrics"><code>chunk_id=L3_C03</code> &nbsp; <code>content_type=step</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>dist=0.6786</code> &nbsp; <code>sim_pct=32.1000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_3/confused: L3_C03 difficulty='basic'</td>
+          <td class="metrics"><code>chunk_id=L3_C03</code> &nbsp; <code>content_type=step</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>dist=0.6786</code> &nbsp; <code>sim_pct=32.1000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_3/struggling: L3_C07 content_type ∈ allowed</td>
+          <td class="metrics"><code>chunk_id=L3_C07</code> &nbsp; <code>content_type=challenge_solution</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>dist=0.6198</code> &nbsp; <code>sim_pct=38.0000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_3/struggling: L3_C07 difficulty='basic'</td>
+          <td class="metrics"><code>chunk_id=L3_C07</code> &nbsp; <code>content_type=challenge_solution</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>dist=0.6198</code> &nbsp; <code>sim_pct=38.0000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_3/struggling: L3_C06 content_type ∈ allowed</td>
+          <td class="metrics"><code>chunk_id=L3_C06</code> &nbsp; <code>content_type=challenge_solution</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>dist=0.6351</code> &nbsp; <code>sim_pct=36.5000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_3/struggling: L3_C06 difficulty='basic'</td>
+          <td class="metrics"><code>chunk_id=L3_C06</code> &nbsp; <code>content_type=challenge_solution</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>dist=0.6351</code> &nbsp; <code>sim_pct=36.5000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_3/struggling: L3_C04 content_type ∈ allowed</td>
+          <td class="metrics"><code>chunk_id=L3_C04</code> &nbsp; <code>content_type=step</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>dist=0.6710</code> &nbsp; <code>sim_pct=32.9000</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_3/struggling: L3_C04 difficulty='basic'</td>
+          <td class="metrics"><code>chunk_id=L3_C04</code> &nbsp; <code>content_type=step</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>dist=0.6710</code> &nbsp; <code>sim_pct=32.9000</code></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-block">
+      <h3>D. Track B quality — all results from queried room</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_1: Track B chunks all belong to room_1</td>
+          <td class="metrics"><code>track_b=3</code> &nbsp; <code>dist_min=0.8590</code> &nbsp; <code>dist_max=0.9658</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_2: Track B chunks all belong to room_2</td>
+          <td class="metrics"><code>track_b=3</code> &nbsp; <code>dist_min=0.9459</code> &nbsp; <code>dist_max=0.9581</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_3: Track B chunks all belong to room_3</td>
+          <td class="metrics"><code>track_b=3</code> &nbsp; <code>dist_min=0.9148</code> &nbsp; <code>dist_max=0.9537</code></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-block">
+      <h3>E. Merge deduplication — no duplicate chunk_ids in combined</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_1/confused: combined has no duplicate chunk_ids</td>
+          <td class="metrics"><code>combined=6</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_1/struggling: combined has no duplicate chunk_ids</td>
+          <td class="metrics"><code>combined=6</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_1/stuck: combined has no duplicate chunk_ids</td>
+          <td class="metrics"><code>combined=3</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_2/confused: combined has no duplicate chunk_ids</td>
+          <td class="metrics"><code>combined=3</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_2/struggling: combined has no duplicate chunk_ids</td>
+          <td class="metrics"><code>combined=4</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_2/stuck: combined has no duplicate chunk_ids</td>
+          <td class="metrics"><code>combined=3</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_3/confused: combined has no duplicate chunk_ids</td>
+          <td class="metrics"><code>combined=5</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_3/struggling: combined has no duplicate chunk_ids</td>
+          <td class="metrics"><code>combined=5</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">room_3/stuck: combined has no duplicate chunk_ids</td>
+          <td class="metrics"><code>combined=3</code></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-block">
+      <h3>F. Semantic relevance smoke tests</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Relevance: 24/7 support → Virtual Assistants (L1_C04)</td>
+          <td class="metrics"><code>expected_id=L1_C04</code> &nbsp; <code>found=True</code> &nbsp; <code>rank=3</code> &nbsp; <code>dist=0.8448</code> &nbsp; <code>sim_pct=15.5000</code> &nbsp; <code>track=A+B</code> &nbsp; <code>returned_ids=['L1_C01', 'L1_C07', 'L1_C04', 'L1_C10', 'L1_C06']</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Relevance: Classify sentiment → Sentiment Analysis (L1_C05)</td>
+          <td class="metrics"><code>expected_id=L1_C05</code> &nbsp; <code>found=True</code> &nbsp; <code>rank=4</code> &nbsp; <code>dist=0.5521</code> &nbsp; <code>sim_pct=44.8000</code> &nbsp; <code>track=B</code> &nbsp; <code>returned_ids=['L1_C02', 'L1_C07', 'L1_C04', 'L1_C05', 'L1_C09', 'L1_C10']</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Relevance: NetWiz use cases → case study (L1_C10)</td>
+          <td class="metrics"><code>expected_id=L1_C10</code> &nbsp; <code>found=True</code> &nbsp; <code>rank=1</code> &nbsp; <code>dist=0.4593</code> &nbsp; <code>sim_pct=54.1000</code> &nbsp; <code>track=B</code> &nbsp; <code>returned_ids=['L1_C10', 'L1_C02', 'L1_C07']</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Relevance: Multilingual vs Japanese confusion → L2_C10</td>
+          <td class="metrics"><code>expected_id=L2_C10</code> &nbsp; <code>found=True</code> &nbsp; <code>rank=2</code> &nbsp; <code>dist=0.2429</code> &nbsp; <code>sim_pct=75.7000</code> &nbsp; <code>track=B</code> &nbsp; <code>returned_ids=['L2_C01', 'L2_C10', 'L2_C09', 'L2_C06']</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Relevance: Content safety → Granite Guardian (L2_C11)</td>
+          <td class="metrics"><code>expected_id=L2_C11</code> &nbsp; <code>found=True</code> &nbsp; <code>rank=2</code> &nbsp; <code>dist=0.6466</code> &nbsp; <code>sim_pct=35.3000</code> &nbsp; <code>track=B</code> &nbsp; <code>returned_ids=['L2_C12', 'L2_C11', 'L2_C03']</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Relevance: Code generation → Granite Code (L2_C08)</td>
+          <td class="metrics"><code>expected_id=L2_C08</code> &nbsp; <code>found=True</code> &nbsp; <code>rank=1</code> &nbsp; <code>dist=0.5824</code> &nbsp; <code>sim_pct=41.8000</code> &nbsp; <code>track=B</code> &nbsp; <code>returned_ids=['L2_C08', 'L2_C12', 'L2_C01']</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Relevance: Missing constraints → Be specific step (L3_C03)</td>
+          <td class="metrics"><code>expected_id=L3_C03</code> &nbsp; <code>found=True</code> &nbsp; <code>rank=3</code> &nbsp; <code>dist=0.6786</code> &nbsp; <code>sim_pct=32.1000</code> &nbsp; <code>track=A</code> &nbsp; <code>returned_ids=['L3_C04', 'L3_C01', 'L3_C03', 'L3_C06', 'L3_C05']</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Relevance: Vague prompt → challenge-solution (L3_C06)</td>
+          <td class="metrics"><code>expected_id=L3_C06</code> &nbsp; <code>found=True</code> &nbsp; <code>rank=2</code> &nbsp; <code>dist=0.6351</code> &nbsp; <code>sim_pct=36.5000</code> &nbsp; <code>track=A+B</code> &nbsp; <code>returned_ids=['L3_C07', 'L3_C06', 'L3_C04', 'L3_C01', 'L3_C02']</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Relevance: Complex language/ambiguity → L3_C07</td>
+          <td class="metrics"><code>expected_id=L3_C07</code> &nbsp; <code>found=True</code> &nbsp; <code>rank=1</code> &nbsp; <code>dist=0.3968</code> &nbsp; <code>sim_pct=60.3000</code> &nbsp; <code>track=B</code> &nbsp; <code>returned_ids=['L3_C07', 'L3_C05', 'L3_C03']</code></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-block">
+      <h3>G. Edge cases</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Empty wrong_answer does not raise</td>
+          <td class="metrics"><code>combined=3</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">One-word wrong_answer does not raise</td>
+          <td class="metrics"><code>combined=3</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">k_b=0 → track_b is empty</td>
+          <td class="metrics"><code>track_b=0</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">k_a=0 → track_a is empty</td>
+          <td class="metrics"><code>track_a=0</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">k_a=0 → track_b still has results</td>
+          <td class="metrics"><code>track_b=2</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Very large k values do not raise</td>
+          <td class="metrics"><code>combined=7</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Large k returns ≤ available chunks</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Unknown DDA state string does not raise</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-block">
+      <h3>H. Direct chunk fetch — get_chunk_by_id</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">get_chunk_by_id(L1_C01) returns a ChunkResult</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L1_C01: chunk_id field matches requested ID</td>
+          <td class="metrics"><code>chunk_id=L1_C01</code> &nbsp; <code>concept=Definition of LLM and the human-machine gap</code> &nbsp; <code>content_type=concept</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>content_length=805</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L1_C01: content is non-empty</td>
+          <td class="metrics"><code>chunk_id=L1_C01</code> &nbsp; <code>concept=Definition of LLM and the human-machine gap</code> &nbsp; <code>content_type=concept</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>content_length=805</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L1_C01: concept is non-empty</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">get_chunk_by_id(L1_C04) returns a ChunkResult</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L1_C04: chunk_id field matches requested ID</td>
+          <td class="metrics"><code>chunk_id=L1_C04</code> &nbsp; <code>concept=Virtual Assistants</code> &nbsp; <code>content_type=use_case</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>content_length=756</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L1_C04: content is non-empty</td>
+          <td class="metrics"><code>chunk_id=L1_C04</code> &nbsp; <code>concept=Virtual Assistants</code> &nbsp; <code>content_type=use_case</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>content_length=756</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L1_C04: concept is non-empty</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">get_chunk_by_id(L1_C10) returns a ChunkResult</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L1_C10: chunk_id field matches requested ID</td>
+          <td class="metrics"><code>chunk_id=L1_C10</code> &nbsp; <code>concept=NetWiz case study — all 6 use cases in action</code> &nbsp; <code>content_type=case_study</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>content_length=1318</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L1_C10: content is non-empty</td>
+          <td class="metrics"><code>chunk_id=L1_C10</code> &nbsp; <code>concept=NetWiz case study — all 6 use cases in action</code> &nbsp; <code>content_type=case_study</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>content_length=1318</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L1_C10: concept is non-empty</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">get_chunk_by_id(L2_C01) returns a ChunkResult</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L2_C01: chunk_id field matches requested ID</td>
+          <td class="metrics"><code>chunk_id=L2_C01</code> &nbsp; <code>concept=What is IBM Granite</code> &nbsp; <code>content_type=concept</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>content_length=645</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L2_C01: content is non-empty</td>
+          <td class="metrics"><code>chunk_id=L2_C01</code> &nbsp; <code>concept=What is IBM Granite</code> &nbsp; <code>content_type=concept</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>content_length=645</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L2_C01: concept is non-empty</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">get_chunk_by_id(L2_C08) returns a ChunkResult</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L2_C08: chunk_id field matches requested ID</td>
+          <td class="metrics"><code>chunk_id=L2_C08</code> &nbsp; <code>concept=Model: Granite Code</code> &nbsp; <code>content_type=model_spec</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>content_length=578</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L2_C08: content is non-empty</td>
+          <td class="metrics"><code>chunk_id=L2_C08</code> &nbsp; <code>concept=Model: Granite Code</code> &nbsp; <code>content_type=model_spec</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>content_length=578</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L2_C08: concept is non-empty</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">get_chunk_by_id(L2_C11) returns a ChunkResult</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L2_C11: chunk_id field matches requested ID</td>
+          <td class="metrics"><code>chunk_id=L2_C11</code> &nbsp; <code>concept=Model: Granite Guardian</code> &nbsp; <code>content_type=model_spec</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>content_length=573</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L2_C11: content is non-empty</td>
+          <td class="metrics"><code>chunk_id=L2_C11</code> &nbsp; <code>concept=Model: Granite Guardian</code> &nbsp; <code>content_type=model_spec</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>content_length=573</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L2_C11: concept is non-empty</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">get_chunk_by_id(L2_C12) returns a ChunkResult</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L2_C12: chunk_id field matches requested ID</td>
+          <td class="metrics"><code>chunk_id=L2_C12</code> &nbsp; <code>concept=Case study: e-commerce company using all 6 Granite models</code> &nbsp; <code>content_type=case_study</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>content_length=944</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L2_C12: content is non-empty</td>
+          <td class="metrics"><code>chunk_id=L2_C12</code> &nbsp; <code>concept=Case study: e-commerce company using all 6 Granite models</code> &nbsp; <code>content_type=case_study</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>content_length=944</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L2_C12: concept is non-empty</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">get_chunk_by_id(L3_C01) returns a ChunkResult</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L3_C01: chunk_id field matches requested ID</td>
+          <td class="metrics"><code>chunk_id=L3_C01</code> &nbsp; <code>concept=What is a prompt</code> &nbsp; <code>content_type=concept</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>content_length=821</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L3_C01: content is non-empty</td>
+          <td class="metrics"><code>chunk_id=L3_C01</code> &nbsp; <code>concept=What is a prompt</code> &nbsp; <code>content_type=concept</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>content_length=821</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L3_C01: concept is non-empty</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">get_chunk_by_id(L3_C06) returns a ChunkResult</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L3_C06: chunk_id field matches requested ID</td>
+          <td class="metrics"><code>chunk_id=L3_C06</code> &nbsp; <code>concept=Challenge: Vague prompts</code> &nbsp; <code>content_type=challenge_solution</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>content_length=951</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L3_C06: content is non-empty</td>
+          <td class="metrics"><code>chunk_id=L3_C06</code> &nbsp; <code>concept=Challenge: Vague prompts</code> &nbsp; <code>content_type=challenge_solution</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>content_length=951</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L3_C06: concept is non-empty</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">get_chunk_by_id(L3_C07) returns a ChunkResult</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L3_C07: chunk_id field matches requested ID</td>
+          <td class="metrics"><code>chunk_id=L3_C07</code> &nbsp; <code>concept=Challenge: Complex language and ambiguity</code> &nbsp; <code>content_type=challenge_solution</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>content_length=985</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L3_C07: content is non-empty</td>
+          <td class="metrics"><code>chunk_id=L3_C07</code> &nbsp; <code>concept=Challenge: Complex language and ambiguity</code> &nbsp; <code>content_type=challenge_solution</code> &nbsp; <code>difficulty=basic</code> &nbsp; <code>content_length=985</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L3_C07: concept is non-empty</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">get_chunk_by_id for non-existent ID returns None</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-block">
+      <h3>I. Content quality — no markdown symbols in chunk content</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L1_C01: content has no markdown formatting</td>
+          <td class="metrics"><code>chunk_id=L1_C01</code> &nbsp; <code>markdown_found=False</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L1_C04: content has no markdown formatting</td>
+          <td class="metrics"><code>chunk_id=L1_C04</code> &nbsp; <code>markdown_found=False</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L1_C10: content has no markdown formatting</td>
+          <td class="metrics"><code>chunk_id=L1_C10</code> &nbsp; <code>markdown_found=False</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L2_C01: content has no markdown formatting</td>
+          <td class="metrics"><code>chunk_id=L2_C01</code> &nbsp; <code>markdown_found=False</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L2_C08: content has no markdown formatting</td>
+          <td class="metrics"><code>chunk_id=L2_C08</code> &nbsp; <code>markdown_found=False</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L2_C11: content has no markdown formatting</td>
+          <td class="metrics"><code>chunk_id=L2_C11</code> &nbsp; <code>markdown_found=False</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L2_C12: content has no markdown formatting</td>
+          <td class="metrics"><code>chunk_id=L2_C12</code> &nbsp; <code>markdown_found=False</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L3_C01: content has no markdown formatting</td>
+          <td class="metrics"><code>chunk_id=L3_C01</code> &nbsp; <code>markdown_found=False</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L3_C06: content has no markdown formatting</td>
+          <td class="metrics"><code>chunk_id=L3_C06</code> &nbsp; <code>markdown_found=False</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">L3_C07: content has no markdown formatting</td>
+          <td class="metrics"><code>chunk_id=L3_C07</code> &nbsp; <code>markdown_found=False</code></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div><h2 class="suite-title">End-to-End Integration Tests</h2>
+    <div class="section-block">
+      <h3>TestScenario1_Flow</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_correct_answer_returns_flow</td>
+          <td class="metrics"><code>duration_seconds=0.0050</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_correct_answer_increments_attempt_count</td>
+          <td class="metrics"><code>duration_seconds=0.0028</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_correct_answer_does_not_set_help_requested</td>
+          <td class="metrics"><code>duration_seconds=0.0030</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_flow_state_persisted_in_firestore</td>
+          <td class="metrics"><code>duration_seconds=0.0024</code></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-block">
+      <h3>TestScenario2_Struggling</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_two_errors_produce_struggling</td>
+          <td class="metrics"><code>duration_seconds=0.0031</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_struggling_returns_doctor_k_message</td>
+          <td class="metrics"><code>duration_seconds=0.0034</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_struggling_state_persisted</td>
+          <td class="metrics"><code>duration_seconds=0.0029</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_three_errors_produce_stuck</td>
+          <td class="metrics"><code>duration_seconds=0.0040</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_correct_answer_after_struggling_returns_flow</td>
+          <td class="metrics"><code>duration_seconds=0.0038</code></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-block">
+      <h3>TestScenario3_Hint</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_hint_returns_confused_state</td>
+          <td class="metrics"><code>duration_seconds=0.0031</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_hint_returns_doctor_k_message</td>
+          <td class="metrics"><code>duration_seconds=0.0028</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_hint_sets_help_requested_in_firestore</td>
+          <td class="metrics"><code>duration_seconds=0.0033</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_repeated_hints_escalate_message_not_error</td>
+          <td class="metrics"><code>duration_seconds=0.0046</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_hint_after_wrong_answer_uses_last_wrong_answer</td>
+          <td class="metrics"><code>duration_seconds=0.0037</code></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-block">
+      <h3>TestScenario4_SessionReload</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_existing_incomplete_session_is_resumed</td>
+          <td class="metrics"><code>duration_seconds=0.0037</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_resumed_session_retains_dda_state</td>
+          <td class="metrics"><code>duration_seconds=0.0041</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_resumed_session_retains_attempt_count</td>
+          <td class="metrics"><code>duration_seconds=0.0043</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_dda_events_flushed_on_room_complete</td>
+          <td class="metrics"><code>duration_seconds=0.0053</code></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-block">
+      <h3>TestScenario5_LLMFailure</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_submit_returns_200_despite_llm_failure</td>
+          <td class="metrics"><code>duration_seconds=0.0032</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_dda_state_correct_despite_llm_failure</td>
+          <td class="metrics"><code>duration_seconds=0.0044</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_fallback_message_returned_on_llm_failure</td>
+          <td class="metrics"><code>duration_seconds=0.0034</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_session_saved_despite_llm_failure</td>
+          <td class="metrics"><code>duration_seconds=0.0024</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_teach_sse_emits_error_event_on_llm_failure</td>
+          <td class="metrics"><code>duration_seconds=0.0033</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_hint_returns_200_with_fallback_on_llm_failure</td>
+          <td class="metrics"><code>duration_seconds=0.0390</code></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+</body>
+</html>

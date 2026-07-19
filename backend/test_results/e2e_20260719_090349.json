@@ -1,0 +1,226 @@
+{
+  "suite": "E2E Integration Tests",
+  "timestamp": "2026-07-19T09:03:49",
+  "total": 24,
+  "passed": 24,
+  "failed": 0,
+  "exit_status": 0,
+  "results": [
+    {
+      "section": "TestScenario1_Flow",
+      "label": "test_correct_answer_returns_flow",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.005
+      }
+    },
+    {
+      "section": "TestScenario1_Flow",
+      "label": "test_correct_answer_increments_attempt_count",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0028
+      }
+    },
+    {
+      "section": "TestScenario1_Flow",
+      "label": "test_correct_answer_does_not_set_help_requested",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.003
+      }
+    },
+    {
+      "section": "TestScenario1_Flow",
+      "label": "test_flow_state_persisted_in_firestore",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0024
+      }
+    },
+    {
+      "section": "TestScenario2_Struggling",
+      "label": "test_two_errors_produce_struggling",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0031
+      }
+    },
+    {
+      "section": "TestScenario2_Struggling",
+      "label": "test_struggling_returns_doctor_k_message",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0034
+      }
+    },
+    {
+      "section": "TestScenario2_Struggling",
+      "label": "test_struggling_state_persisted",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0029
+      }
+    },
+    {
+      "section": "TestScenario2_Struggling",
+      "label": "test_three_errors_produce_stuck",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.004
+      }
+    },
+    {
+      "section": "TestScenario2_Struggling",
+      "label": "test_correct_answer_after_struggling_returns_flow",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0038
+      }
+    },
+    {
+      "section": "TestScenario3_Hint",
+      "label": "test_hint_returns_confused_state",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0031
+      }
+    },
+    {
+      "section": "TestScenario3_Hint",
+      "label": "test_hint_returns_doctor_k_message",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0028
+      }
+    },
+    {
+      "section": "TestScenario3_Hint",
+      "label": "test_hint_sets_help_requested_in_firestore",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0033
+      }
+    },
+    {
+      "section": "TestScenario3_Hint",
+      "label": "test_repeated_hints_escalate_message_not_error",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0046
+      }
+    },
+    {
+      "section": "TestScenario3_Hint",
+      "label": "test_hint_after_wrong_answer_uses_last_wrong_answer",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0037
+      }
+    },
+    {
+      "section": "TestScenario4_SessionReload",
+      "label": "test_existing_incomplete_session_is_resumed",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0037
+      }
+    },
+    {
+      "section": "TestScenario4_SessionReload",
+      "label": "test_resumed_session_retains_dda_state",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0041
+      }
+    },
+    {
+      "section": "TestScenario4_SessionReload",
+      "label": "test_resumed_session_retains_attempt_count",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0043
+      }
+    },
+    {
+      "section": "TestScenario4_SessionReload",
+      "label": "test_dda_events_flushed_on_room_complete",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0053
+      }
+    },
+    {
+      "section": "TestScenario5_LLMFailure",
+      "label": "test_submit_returns_200_despite_llm_failure",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0032
+      }
+    },
+    {
+      "section": "TestScenario5_LLMFailure",
+      "label": "test_dda_state_correct_despite_llm_failure",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0044
+      }
+    },
+    {
+      "section": "TestScenario5_LLMFailure",
+      "label": "test_fallback_message_returned_on_llm_failure",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0034
+      }
+    },
+    {
+      "section": "TestScenario5_LLMFailure",
+      "label": "test_session_saved_despite_llm_failure",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0024
+      }
+    },
+    {
+      "section": "TestScenario5_LLMFailure",
+      "label": "test_teach_sse_emits_error_event_on_llm_failure",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0033
+      }
+    },
+    {
+      "section": "TestScenario5_LLMFailure",
+      "label": "test_hint_returns_200_with_fallback_on_llm_failure",
+      "passed": true,
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.039
+      }
+    }
+  ]
+}

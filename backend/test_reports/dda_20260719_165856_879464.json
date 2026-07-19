@@ -1,0 +1,608 @@
+{
+  "suite": "DDA State Machine",
+  "timestamp": "20260719_165856",
+  "passed": 59,
+  "failed": 0,
+  "total": 59,
+  "all_passed": true,
+  "thresholds": {
+    "CONSECUTIVE_STUCK": 3,
+    "CONSECUTIVE_STRUGGLING": 2,
+    "SLOW_MULTIPLIER": 2.0,
+    "MIN_TIMES_FOR_SLOW": 3
+  },
+  "requirements": {
+    "dda_state_computation": true,
+    "attempt_history_recording": true
+  },
+  "results": [
+    {
+      "section": "1. Basic state transitions",
+      "label": "Correct answer → FLOW",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "state": "DDAState.FLOW",
+        "consecutive_errors": 0
+      }
+    },
+    {
+      "section": "1. Basic state transitions",
+      "label": "Correct answer → show_scaffold=False",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {}
+    },
+    {
+      "section": "1. Basic state transitions",
+      "label": "Two consecutive errors → STRUGGLING",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "state": "DDAState.STRUGGLING",
+        "consecutive_errors": 2
+      }
+    },
+    {
+      "section": "1. Basic state transitions",
+      "label": "STRUGGLING → show_scaffold=True",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {}
+    },
+    {
+      "section": "1. Basic state transitions",
+      "label": "Three consecutive errors → STUCK",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "state": "DDAState.STUCK",
+        "consecutive_errors": 3
+      }
+    },
+    {
+      "section": "1. Basic state transitions",
+      "label": "STUCK → show_scaffold=True",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {}
+    },
+    {
+      "section": "2. Boundary conditions (exactly at threshold)",
+      "label": "Exactly 1 error → NOT STRUGGLING",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "state": "DDAState.FLOW",
+        "consecutive_errors": 1
+      }
+    },
+    {
+      "section": "2. Boundary conditions (exactly at threshold)",
+      "label": "Exactly 2 errors → STRUGGLING",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "state": "DDAState.STRUGGLING",
+        "consecutive_errors": 2
+      }
+    },
+    {
+      "section": "2. Boundary conditions (exactly at threshold)",
+      "label": "Exactly 3 errors → STUCK",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "state": "DDAState.STUCK",
+        "consecutive_errors": 3
+      }
+    },
+    {
+      "section": "2. Boundary conditions (exactly at threshold)",
+      "label": "4th consecutive error → stays STUCK",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "state": "DDAState.STUCK"
+      }
+    },
+    {
+      "section": "3. Latency (slow-response) detection",
+      "label": "Slow response with < 3 prior timings → NOT CONFUSED",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "state": "DDAState.FLOW",
+        "n_timings": 2,
+        "ratio": 99.0
+      }
+    },
+    {
+      "section": "3. Latency (slow-response) detection",
+      "label": "Response > 2.0× average → CONFUSED",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "state": "DDAState.CONFUSED",
+        "ratio": 2.25,
+        "last_ms": 4500,
+        "avg_prior_ms": 2000
+      }
+    },
+    {
+      "section": "3. Latency (slow-response) detection",
+      "label": "Response just under 2.0× average → NOT CONFUSED",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "state": "DDAState.FLOW",
+        "ratio": 1.95,
+        "last_ms": 3900
+      }
+    },
+    {
+      "section": "4. Help-seeking (hint button)",
+      "label": "Help requested from FLOW → at least CONFUSED",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "state": "DDAState.CONFUSED",
+        "help_requested": true
+      }
+    },
+    {
+      "section": "4. Help-seeking (hint button)",
+      "label": "help_requested flag set on room",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {}
+    },
+    {
+      "section": "4. Help-seeking (hint button)",
+      "label": "Wrong answer after help_requested → stays ≥ CONFUSED",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "state": "DDAState.CONFUSED"
+      }
+    },
+    {
+      "section": "4. Help-seeking (hint button)",
+      "label": "Help requested while STRUGGLING → stays ≥ STRUGGLING",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "state": "DDAState.STRUGGLING"
+      }
+    },
+    {
+      "section": "4. Help-seeking (hint button)",
+      "label": "Help requested while STUCK → stays STUCK",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "state": "DDAState.STUCK"
+      }
+    },
+    {
+      "section": "5. State reset after a correct answer",
+      "label": "Correct answer after STRUGGLING → FLOW",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "state": "DDAState.FLOW",
+        "consecutive_errors": 0
+      }
+    },
+    {
+      "section": "5. State reset after a correct answer",
+      "label": "Consecutive error counter reset to 0",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "consecutive_errors": 0
+      }
+    },
+    {
+      "section": "5. State reset after a correct answer",
+      "label": "Correct answer after STUCK → FLOW",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "state": "DDAState.FLOW",
+        "consecutive_errors": 0
+      }
+    },
+    {
+      "section": "6. Multi-room session isolation",
+      "label": "room_2 starts in FLOW regardless of room_1 state",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "room_1_state": "DDAState.STUCK",
+        "room_2_state": "DDAState.FLOW"
+      }
+    },
+    {
+      "section": "6. Multi-room session isolation",
+      "label": "room_1 still STUCK after room_2 attempt",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {}
+    },
+    {
+      "section": "6. Multi-room session isolation",
+      "label": "room_2 consecutive_errors is 0",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {}
+    },
+    {
+      "section": "7. Attempt history recording",
+      "label": "room.attempts counter = 2",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "attempts": 2,
+        "history_length": 2,
+        "history_0_ms": 1500,
+        "history_1_ms": 3000
+      }
+    },
+    {
+      "section": "7. Attempt history recording",
+      "label": "history has 2 entries",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {}
+    },
+    {
+      "section": "7. Attempt history recording",
+      "label": "history[0].is_correct = True",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {}
+    },
+    {
+      "section": "7. Attempt history recording",
+      "label": "history[1].is_correct = False",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {}
+    },
+    {
+      "section": "7. Attempt history recording",
+      "label": "history[0].answer_given stored",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {}
+    },
+    {
+      "section": "7. Attempt history recording",
+      "label": "history[1].time_taken_ms stored",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {}
+    },
+    {
+      "section": "8. Persona stage progression",
+      "label": "Initial persona = COLD",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "persona": "PersonaStage.COLD"
+      }
+    },
+    {
+      "section": "8. Persona stage progression",
+      "label": "After room_1 → COLLABORATIVE",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "persona": "PersonaStage.COLLABORATIVE"
+      }
+    },
+    {
+      "section": "8. Persona stage progression",
+      "label": "After room_2 → CARING",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "persona": "PersonaStage.CARING"
+      }
+    },
+    {
+      "section": "8. Persona stage progression",
+      "label": "After room_3 → ALLY",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "persona": "PersonaStage.ALLY"
+      }
+    },
+    {
+      "section": "8. Persona stage progression",
+      "label": "Quiz pass (75 %) → FULL_UNLOCK",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "persona": "PersonaStage.FULL_UNLOCK"
+      }
+    },
+    {
+      "section": "8. Persona stage progression",
+      "label": "certificate = True",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "certificate": true
+      }
+    },
+    {
+      "section": "9. mark_room_complete with unrecognised room ID",
+      "label": "Unknown room ID does not advance persona",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "persona_before": "PersonaStage.COLD",
+        "persona_after": "PersonaStage.COLD"
+      }
+    },
+    {
+      "section": "10. Room-to-room navigation",
+      "label": "Initial current_room = room_1",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "current_room": "room_1"
+      }
+    },
+    {
+      "section": "10. Room-to-room navigation",
+      "label": "After room_1 complete → room_2",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "current_room": "room_2"
+      }
+    },
+    {
+      "section": "10. Room-to-room navigation",
+      "label": "After room_2 complete → room_3",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "current_room": "room_3"
+      }
+    },
+    {
+      "section": "10. Room-to-room navigation",
+      "label": "After room_3 complete → quiz",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "current_room": "quiz"
+      }
+    },
+    {
+      "section": "11. Quiz pass and fail thresholds",
+      "label": "Score 75 % → certificate=True",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "score": 0.75,
+        "certificate": true,
+        "persona": "PersonaStage.FULL_UNLOCK"
+      }
+    },
+    {
+      "section": "11. Quiz pass and fail thresholds",
+      "label": "Score 75 % → quiz_completed=True",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {}
+    },
+    {
+      "section": "11. Quiz pass and fail thresholds",
+      "label": "Score 100 % → certificate=True",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "score": 1.0,
+        "certificate": true,
+        "persona": "PersonaStage.FULL_UNLOCK"
+      }
+    },
+    {
+      "section": "11. Quiz pass and fail thresholds",
+      "label": "Score 100 % → quiz_completed=True",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {}
+    },
+    {
+      "section": "11. Quiz pass and fail thresholds",
+      "label": "Score 74 % → certificate=False",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "score": 0.74,
+        "certificate": false,
+        "persona": "PersonaStage.COLD"
+      }
+    },
+    {
+      "section": "11. Quiz pass and fail thresholds",
+      "label": "Score 74 % → quiz_completed=True",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {}
+    },
+    {
+      "section": "11. Quiz pass and fail thresholds",
+      "label": "Score 0 % → certificate=False",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "score": 0.0,
+        "certificate": false,
+        "persona": "PersonaStage.COLD"
+      }
+    },
+    {
+      "section": "11. Quiz pass and fail thresholds",
+      "label": "Score 0 % → quiz_completed=True",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {}
+    },
+    {
+      "section": "12. show_scaffold flag correctness",
+      "label": "0 error(s) → show_scaffold=False",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "n_errors": 0,
+        "state": "DDAState.FLOW",
+        "show_scaffold": false
+      }
+    },
+    {
+      "section": "12. show_scaffold flag correctness",
+      "label": "1 error(s) → show_scaffold=False",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "n_errors": 1,
+        "state": "DDAState.FLOW",
+        "show_scaffold": false
+      }
+    },
+    {
+      "section": "12. show_scaffold flag correctness",
+      "label": "2 error(s) → show_scaffold=True",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "n_errors": 2,
+        "state": "DDAState.STRUGGLING",
+        "show_scaffold": true
+      }
+    },
+    {
+      "section": "12. show_scaffold flag correctness",
+      "label": "3 error(s) → show_scaffold=True",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "n_errors": 3,
+        "state": "DDAState.STUCK",
+        "show_scaffold": true
+      }
+    },
+    {
+      "section": "13. SessionState.get_room auto-creates RoomState",
+      "label": "rooms dict initially empty",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {}
+    },
+    {
+      "section": "13. SessionState.get_room auto-creates RoomState",
+      "label": "get_room creates entry",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {}
+    },
+    {
+      "section": "13. SessionState.get_room auto-creates RoomState",
+      "label": "created room has room_id set",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {}
+    },
+    {
+      "section": "13. SessionState.get_room auto-creates RoomState",
+      "label": "get_room returns same object",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {}
+    },
+    {
+      "section": "14. mark_room_complete sets room.completed and room.score",
+      "label": "room.completed = True",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {
+        "completed": true,
+        "score": 0.67
+      }
+    },
+    {
+      "section": "14. mark_room_complete sets room.completed and room.score",
+      "label": "room.score = 0.67",
+      "passed": true,
+      "expected": null,
+      "got": null,
+      "metrics": {}
+    }
+  ]
+}

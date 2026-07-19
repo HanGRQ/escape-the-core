@@ -1,7 +1,8 @@
 """
 Test Report Generator
 =====================
-Reads the most recent dda_*.json and rag_*.json from backend/test_results/
+Reads the most recent dda_*.json, rag_*.json, and e2e_*.json from
+backend/test_reports/
 and generates a single HTML report with formatted tables.
 
 Usage:
@@ -9,15 +10,16 @@ Usage:
     python scripts/generate_report.py
 
 Output:
-    backend/test_results/report_<YYYYMMDD_HHMMSS>.html
+    backend/test_reports/report_<YYYYMMDD_HHMMSS>.html
 """
 
 import json
 import datetime
 import sys
 from pathlib import Path
+from reporting import default_results_dir, result_status
 
-RESULTS_DIR = Path(__file__).resolve().parent.parent / "test_results"
+RESULTS_DIR = default_results_dir()
 
 # ── Find the latest report files ─────────────────────────────────────────────
 
@@ -30,24 +32,29 @@ def latest(prefix):
 
 dda_file = latest("dda")
 rag_file = latest("rag")
+e2e_file = latest("e2e")
 
-if not dda_file and not rag_file:
+if not dda_file and not rag_file and not e2e_file:
     print("No test result files found.")
     print("Run test_dda.py and test_rag.py first.")
     sys.exit(1)
 
 dda_data = json.loads(dda_file.read_text(encoding="utf-8")) if dda_file else None
 rag_data = json.loads(rag_file.read_text(encoding="utf-8")) if rag_file else None
+e2e_data = json.loads(e2e_file.read_text(encoding="utf-8")) if e2e_file else None
 
 print(f"  DDA report : {dda_file.name if dda_file else 'not found'}")
 print(f"  RAG report : {rag_file.name if rag_file else 'not found'}")
+print(f"  E2E report : {e2e_file.name if e2e_file else 'not found'}")
 
 # ── HTML helpers ──────────────────────────────────────────────────────────────
 
-def badge(passed):
-    if passed:
-        return '<span class="badge pass">PASS</span>'
-    return '<span class="badge fail">FAIL</span>'
+def badge(status):
+    normalized = str(status).upper()
+    css = {"PASS": "pass", "FAIL": "fail", "SKIP": "skip", "ERROR": "error"}.get(
+        normalized, "fail"
+    )
+    return f'<span class="badge {css}">{normalized}</span>'
 
 def fmt_metrics(m):
     if not m:
@@ -71,10 +78,10 @@ def section_table(results, title):
         detail = r.get("detail") or r.get("got") or ""
         rows += f"""
         <tr>
-          <td>{badge(r['passed'])}</td>
+          <td>{badge(result_status(r))}</td>
           <td class="label">{r['label']}</td>
           <td class="metrics">{m_html}</td>
-          <td class="detail">{detail if not r['passed'] else ''}</td>
+          <td class="detail">{detail if result_status(r) != 'PASS' else ''}</td>
         </tr>"""
     return f"""
     <div class="section-block">
@@ -172,6 +179,23 @@ def group_by_section(results):
         sections.setdefault(s, []).append(r)
     return sections
 
+def requirements_table(requirements):
+    if not requirements:
+        return ""
+    rows = ""
+    for requirement, outcome in requirements.items():
+        if isinstance(outcome, bool):
+            status = "PASS" if outcome else "FAIL"
+        else:
+            status = str(outcome).upper()
+        rows += f"<tr><td>{badge(status)}</td><td class='label'>{requirement}</td></tr>"
+    return f"""
+    <div class="section-block">
+      <h3>Requirement Coverage</h3>
+      <table><thead><tr><th style="width:70px">Result</th><th>Requirement</th></tr></thead>
+      <tbody>{rows}</tbody></table>
+    </div>"""
+
 # ── Build full HTML ───────────────────────────────────────────────────────────
 
 ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -183,16 +207,25 @@ body_html = ""
 if dda_data:
     summaries_html += suite_summary(dda_data)
     body_html += '<h2 class="suite-title">DDA State Machine Tests</h2>'
+    body_html += requirements_table(dda_data.get("requirements"))
     for sec, items in group_by_section(dda_data["results"]).items():
         body_html += section_table(items, sec)
 
 if rag_data:
     summaries_html += suite_summary(rag_data)
     body_html += '<h2 class="suite-title">RAG Dual-Track Retrieval Tests</h2>'
+    body_html += requirements_table(rag_data.get("requirements"))
     dist_html = dist_stats_table(rag_data.get("distance_statistics") or {})
     if dist_html:
         body_html += dist_html
     for sec, items in group_by_section(rag_data["results"]).items():
+        body_html += section_table(items, sec)
+
+if e2e_data:
+    summaries_html += suite_summary(e2e_data)
+    body_html += '<h2 class="suite-title">End-to-End Integration Tests</h2>'
+    body_html += requirements_table(e2e_data.get("requirements"))
+    for sec, items in group_by_section(e2e_data["results"]).items():
         body_html += section_table(items, sec)
 
 html = f"""<!DOCTYPE html>
@@ -259,6 +292,8 @@ html = f"""<!DOCTYPE html>
   }}
   .pass {{ background: #c6f6d5; color: #22543d; }}
   .fail {{ background: #fed7d7; color: #742a2a; }}
+  .skip {{ background: #fefcbf; color: #744210; }}
+  .error {{ background: #e9d8fd; color: #44337a; }}
   code {{
     font-family: "SF Mono", "Fira Code", monospace;
     font-size: 10.5px; background: #edf2f7;
@@ -295,5 +330,5 @@ out_file = RESULTS_DIR / f"report_{ts}.html"
 RESULTS_DIR.mkdir(exist_ok=True)
 out_file.write_text(html, encoding="utf-8")
 
-print(f"\n  ✓  Report generated: {out_file}")
+print(f"\n  OK Report generated: {out_file}")
 print(f"     Open in your browser to view the table.")

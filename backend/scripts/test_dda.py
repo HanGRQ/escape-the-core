@@ -6,7 +6,7 @@ Usage:
     python scripts/test_dda.py
 
 Results are printed to the console AND saved to:
-    backend/test_results/dda_<YYYYMMDD_HHMMSS>.json
+    backend/test_reports/dda_<YYYYMMDD_HHMMSS>.json
 """
 
 import sys
@@ -21,6 +21,7 @@ from app.dda import (
     _CONSECUTIVE_STUCK, _CONSECUTIVE_STRUGGLING,
     _SLOW_MULTIPLIER, _MIN_TIMES_FOR_SLOW,
 )
+from scripts.reporting import write_json_report
 
 # ── Report state ──────────────────────────────────────────────────────────────
 RESULTS   = []   # list of dicts, one per check()
@@ -483,9 +484,6 @@ check("room.score = 0.67", room.score == 0.67, 0.67, room.score)
 total    = PASS_COUNT + FAIL_COUNT
 passed   = FAIL_COUNT == 0
 ts       = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-out_dir  = Path(__file__).resolve().parent.parent / "test_results"
-out_dir.mkdir(exist_ok=True)
-out_file = out_dir / f"dda_{ts}.json"
 
 report = {
     "suite":      "DDA State Machine",
@@ -500,11 +498,17 @@ report = {
         "SLOW_MULTIPLIER":        _SLOW_MULTIPLIER,
         "MIN_TIMES_FOR_SLOW":     _MIN_TIMES_FOR_SLOW,
     },
+    "requirements": {
+        "dda_state_computation": FAIL_COUNT == 0,
+        "attempt_history_recording": all(
+            item["passed"] for item in RESULTS
+            if item["section"] == "7. Attempt history recording"
+        ),
+    },
     "results": RESULTS,
 }
 
-with open(out_file, "w", encoding="utf-8") as f:
-    json.dump(report, f, indent=2, ensure_ascii=False)
+out_file = write_json_report("dda", report)
 
 print(f"\n{'═' * 60}")
 if passed:

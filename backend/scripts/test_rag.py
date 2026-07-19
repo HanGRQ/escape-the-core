@@ -6,7 +6,7 @@ Usage:
     python scripts/test_rag.py
 
 Results are printed to the console AND saved to:
-    backend/test_results/rag_<YYYYMMDD_HHMMSS>.json
+    backend/test_reports/rag_<YYYYMMDD_HHMMSS>.json
 """
 
 import sys
@@ -18,6 +18,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app.rag import RAGRetriever, ChunkResult, _TRACK_A_TYPES
+from scripts.reporting import describe_chromadb, write_json_report
 
 # ── Report state ──────────────────────────────────────────────────────────────
 RESULTS    = []
@@ -89,6 +90,9 @@ except Exception as exc:
     print(f"✗ Failed to load RAGRetriever: {exc}")
     print("  Did you run: python scripts/build_knowledge_base.py ?")
     sys.exit(1)
+
+storage_info = describe_chromadb()
+storage_info["document_count"] = r._col.count()
 
 KNOWN_CHUNK_IDS = {
     "room_1": ["L1_C01", "L1_C04", "L1_C10"],
@@ -218,6 +222,49 @@ for room in ALL_ROOMS:
 # F. SEMANTIC RELEVANCE
 # ═══════════════════════════════════════════════════════════════════════════════
 section("F. Semantic relevance smoke tests")
+
+forced_a = ChunkResult("FORCED_DUP", "A", "analogy", "basic", "a", 0.1, "A")
+forced_b = ChunkResult("FORCED_DUP", "B", "use_case", "basic", "b", 0.2, "B")
+forced_unique = ChunkResult("FORCED_UNIQUE", "C", "use_case", "basic", "c", 0.3, "B")
+forced_merged = RAGRetriever._merge([forced_a], [forced_b, forced_unique])
+check("Forced cross-track duplicate is merged exactly once",
+      [c.chunk_id for c in forced_merged] == ["FORCED_DUP", "FORCED_UNIQUE"],
+      metrics={"ids": [c.chunk_id for c in forced_merged]})
+check("Cross-track duplicate is labelled A+B", forced_merged[0].track == "A+B",
+      metrics={"track": forced_merged[0].track})
+
+class _RecordingCollection:
+    def __init__(self):
+        self.calls = []
+
+    def get(self, **kwargs):
+        return {"ids": ["L1_C01", "L1_C02", "L1_C03"]}
+
+    def query(self, **kwargs):
+        self.calls.append(kwargs)
+        return {
+            "ids": [["L1_C01"]], "documents": [["content"]],
+            "metadatas": [[{"concept": "concept", "content_type": "analogy",
+                            "difficulty": "basic"}]],
+            "distances": [[0.2]],
+        }
+
+contract_col = _RecordingCollection()
+contract_rag = object.__new__(RAGRetriever)
+contract_rag._col = contract_col
+contract_rag._track_a("struggling", "room_1", 2)
+track_a_call = contract_col.calls[-1]
+track_a_clauses = track_a_call["where"]["$and"]
+check("Track A sends room/state/difficulty metadata where filter",
+      {"game_room": {"$eq": "room_1"}} in track_a_clauses
+      and {"dda_trigger": {"$in": ["struggling", "confused"]}} in track_a_clauses
+      and {"difficulty": {"$eq": "basic"}} in track_a_clauses)
+
+contract_rag._track_b("specific misconception", "room_2", 3)
+track_b_call = contract_col.calls[-1]
+check("Track B sends wrong answer as semantic query with room scope",
+      track_b_call["query_texts"] == ["specific misconception"]
+      and track_b_call["where"] == {"game_room": {"$eq": "room_2"}})
 
 RELEVANCE_CASES = [
     ("room_1","confused",
@@ -415,9 +462,6 @@ if all_top_dists:
 total   = PASS_COUNT + FAIL_COUNT
 passed  = FAIL_COUNT == 0
 ts      = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-out_dir = Path(__file__).resolve().parent.parent / "test_results"
-out_dir.mkdir(exist_ok=True)
-out_file = out_dir / f"rag_{ts}.json"
 
 report = {
     "suite":      "RAG Dual-Track Retrieval",
@@ -427,11 +471,25 @@ report = {
     "total":      total,
     "all_passed": passed,
     "distance_statistics": dist_stats,
+    "retrieval_backend": storage_info,
+    "requirements": {
+        "real_chromadb": storage_info["backend"] == "chromadb.PersistentClient"
+                         and storage_info["document_count"] > 0,
+        "track_a_metadata_filtering": next(
+            x["passed"] for x in RESULTS
+            if x["label"].startswith("Track A sends")
+        ),
+        "track_b_semantic_retrieval": next(
+            x["passed"] for x in RESULTS
+            if x["label"].startswith("Track B sends")
+        ),
+        "merge_and_deduplicate": forced_merged[0].track == "A+B"
+                                 and len(forced_merged) == 2,
+    },
     "results":    RESULTS,
 }
 
-with open(out_file, "w", encoding="utf-8") as f:
-    json.dump(report, f, indent=2, ensure_ascii=False)
+out_file = write_json_report("rag", report)
 
 print(f"\n{'═' * 60}")
 if passed:

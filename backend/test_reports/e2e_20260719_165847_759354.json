@@ -1,0 +1,60 @@
+{
+  "suite": "E2E Integration Tests",
+  "timestamp": "2026-07-19T16:58:47",
+  "total": 4,
+  "passed": 4,
+  "failed": 0,
+  "exit_status": 0,
+  "requirements": {
+    "dda_then_claude_then_save": "PASS",
+    "flow_first_error_calls_llm": "PASS",
+    "stronger_support_calls_llm": "PASS",
+    "session_reload_restores_progress": "PASS"
+  },
+  "results": [
+    {
+      "section": "TestScenario6_RequirementContracts",
+      "label": "test_request_order_is_dda_then_claude_then_save",
+      "passed": true,
+      "status": "PASS",
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0045
+      },
+      "requirement": "dda_then_claude_then_save"
+    },
+    {
+      "section": "TestScenario6_RequirementContracts",
+      "label": "test_first_flow_error_calls_llm",
+      "passed": true,
+      "status": "PASS",
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0029
+      },
+      "requirement": "flow_first_error_calls_llm"
+    },
+    {
+      "section": "TestScenario6_RequirementContracts",
+      "label": "test_stronger_support_calls_llm",
+      "passed": true,
+      "status": "PASS",
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0039
+      },
+      "requirement": "stronger_support_calls_llm"
+    },
+    {
+      "section": "TestScenario6_RequirementContracts",
+      "label": "test_cold_reload_restores_attempts_dda_and_room_progress",
+      "passed": true,
+      "status": "PASS",
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0068
+      },
+      "requirement": "session_reload_restores_progress"
+    }
+  ]
+}

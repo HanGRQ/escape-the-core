@@ -1,0 +1,312 @@
+{
+  "suite": "E2E Integration Tests",
+  "timestamp": "2026-07-19T21:45:45",
+  "total": 29,
+  "passed": 29,
+  "failed": 0,
+  "exit_status": 0,
+  "requirements": {
+    "claude_failure_preserves_dda_and_session": "PASS",
+    "dda_then_claude_then_save": "PASS",
+    "flow_first_error_calls_llm": "PASS",
+    "stronger_support_calls_llm": "PASS",
+    "session_reload_restores_progress": "PASS"
+  },
+  "results": [
+    {
+      "section": "TestScenario1_Flow",
+      "label": "test_correct_answer_returns_flow",
+      "passed": true,
+      "status": "PASS",
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0043
+      }
+    },
+    {
+      "section": "TestScenario1_Flow",
+      "label": "test_correct_answer_increments_attempt_count",
+      "passed": true,
+      "status": "PASS",
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0023
+      }
+    },
+    {
+      "section": "TestScenario1_Flow",
+      "label": "test_correct_answer_does_not_set_help_requested",
+      "passed": true,
+      "status": "PASS",
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0018
+      }
+    },
+    {
+      "section": "TestScenario1_Flow",
+      "label": "test_flow_state_persisted_in_firestore",
+      "passed": true,
+      "status": "PASS",
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0018
+      }
+    },
+    {
+      "section": "TestScenario2_Struggling",
+      "label": "test_two_errors_produce_struggling",
+      "passed": true,
+      "status": "PASS",
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0031
+      }
+    },
+    {
+      "section": "TestScenario2_Struggling",
+      "label": "test_struggling_returns_doctor_k_message",
+      "passed": true,
+      "status": "PASS",
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0028
+      }
+    },
+    {
+      "section": "TestScenario2_Struggling",
+      "label": "test_struggling_state_persisted",
+      "passed": true,
+      "status": "PASS",
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0029
+      }
+    },
+    {
+      "section": "TestScenario2_Struggling",
+      "label": "test_three_errors_produce_stuck",
+      "passed": true,
+      "status": "PASS",
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0043
+      }
+    },
+    {
+      "section": "TestScenario2_Struggling",
+      "label": "test_correct_answer_after_struggling_returns_flow",
+      "passed": true,
+      "status": "PASS",
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0053
+      }
+    },
+    {
+      "section": "TestScenario3_Hint",
+      "label": "test_hint_returns_confused_state",
+      "passed": true,
+      "status": "PASS",
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0023
+      }
+    },
+    {
+      "section": "TestScenario3_Hint",
+      "label": "test_hint_returns_doctor_k_message",
+      "passed": true,
+      "status": "PASS",
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0022
+      }
+    },
+    {
+      "section": "TestScenario3_Hint",
+      "label": "test_hint_sets_help_requested_in_firestore",
+      "passed": true,
+      "status": "PASS",
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0024
+      }
+    },
+    {
+      "section": "TestScenario3_Hint",
+      "label": "test_repeated_hints_escalate_message_not_error",
+      "passed": true,
+      "status": "PASS",
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0041
+      }
+    },
+    {
+      "section": "TestScenario3_Hint",
+      "label": "test_hint_after_wrong_answer_uses_last_wrong_answer",
+      "passed": true,
+      "status": "PASS",
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0033
+      }
+    },
+    {
+      "section": "TestScenario4_SessionReload",
+      "label": "test_existing_incomplete_session_is_resumed",
+      "passed": true,
+      "status": "PASS",
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0047
+      }
+    },
+    {
+      "section": "TestScenario4_SessionReload",
+      "label": "test_resumed_session_retains_dda_state",
+      "passed": true,
+      "status": "PASS",
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0042
+      }
+    },
+    {
+      "section": "TestScenario4_SessionReload",
+      "label": "test_resumed_session_retains_attempt_count",
+      "passed": true,
+      "status": "PASS",
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0044
+      }
+    },
+    {
+      "section": "TestScenario4_SessionReload",
+      "label": "test_dda_events_flushed_on_room_complete",
+      "passed": true,
+      "status": "PASS",
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0044
+      }
+    },
+    {
+      "section": "TestScenario5_LLMFailure",
+      "label": "test_submit_returns_200_despite_llm_failure",
+      "passed": true,
+      "status": "PASS",
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0022
+      }
+    },
+    {
+      "section": "TestScenario5_LLMFailure",
+      "label": "test_dda_state_correct_despite_llm_failure",
+      "passed": true,
+      "status": "PASS",
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0033
+      }
+    },
+    {
+      "section": "TestScenario5_LLMFailure",
+      "label": "test_fallback_message_returned_on_llm_failure",
+      "passed": true,
+      "status": "PASS",
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0036
+      }
+    },
+    {
+      "section": "TestScenario5_LLMFailure",
+      "label": "test_session_saved_despite_llm_failure",
+      "passed": true,
+      "status": "PASS",
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0025
+      }
+    },
+    {
+      "section": "TestScenario5_LLMFailure",
+      "label": "test_attempts_and_dda_state_persist_despite_llm_failure",
+      "passed": true,
+      "status": "PASS",
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0036
+      },
+      "requirement": "claude_failure_preserves_dda_and_session"
+    },
+    {
+      "section": "TestScenario5_LLMFailure",
+      "label": "test_teach_sse_emits_error_event_on_llm_failure",
+      "passed": true,
+      "status": "PASS",
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0033
+      }
+    },
+    {
+      "section": "TestScenario5_LLMFailure",
+      "label": "test_hint_returns_200_with_fallback_on_llm_failure",
+      "passed": true,
+      "status": "PASS",
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0026
+      }
+    },
+    {
+      "section": "TestScenario6_RequirementContracts",
+      "label": "test_request_order_is_dda_then_claude_then_save",
+      "passed": true,
+      "status": "PASS",
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.002
+      },
+      "requirement": "dda_then_claude_then_save"
+    },
+    {
+      "section": "TestScenario6_RequirementContracts",
+      "label": "test_first_flow_error_calls_llm",
+      "passed": true,
+      "status": "PASS",
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0022
+      },
+      "requirement": "flow_first_error_calls_llm"
+    },
+    {
+      "section": "TestScenario6_RequirementContracts",
+      "label": "test_stronger_support_calls_llm",
+      "passed": true,
+      "status": "PASS",
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0027
+      },
+      "requirement": "stronger_support_calls_llm"
+    },
+    {
+      "section": "TestScenario6_RequirementContracts",
+      "label": "test_cold_reload_restores_attempts_dda_and_room_progress",
+      "passed": true,
+      "status": "PASS",
+      "detail": null,
+      "metrics": {
+        "duration_seconds": 0.0046
+      },
+      "requirement": "session_reload_restores_progress"
+    }
+  ]
+}

@@ -62,6 +62,8 @@
   }
   .pass { background: #c6f6d5; color: #22543d; }
   .fail { background: #fed7d7; color: #742a2a; }
+  .skip { background: #fefcbf; color: #744210; }
+  .error { background: #e9d8fd; color: #44337a; }
   code {
     font-family: "SF Mono", "Fira Code", monospace;
     font-size: 10.5px; background: #edf2f7;
@@ -83,13 +85,13 @@
 </head>
 <body>
   <h1>Escape the Core — Test Report</h1>
-  <div class="run-time">Generated: 2026-07-09 13:39:29</div>
+  <div class="run-time">Generated: 2026-07-19 21:45:16</div>
 
   <div class="summary-row">
     
     <div class="summary-card" style="border-left:4px solid #00c47a">
       <div class="suite-name">DDA State Machine</div>
-      <div class="suite-ts">Run at: 20260709_133809</div>
+      <div class="suite-ts">Run at: 20260719_214254</div>
       <div class="suite-stats">
         <span class="big-num" style="color:#00c47a">59/59</span>
         <span class="pct">(100%)</span>
@@ -98,9 +100,18 @@
     </div>
     <div class="summary-card" style="border-left:4px solid #00c47a">
       <div class="suite-name">RAG Dual-Track Retrieval</div>
-      <div class="suite-ts">Run at: 20260709_133822</div>
+      <div class="suite-ts">Run at: 20260719_214515</div>
       <div class="suite-stats">
-        <span class="big-num" style="color:#00c47a">123/123</span>
+        <span class="big-num" style="color:#00c47a">127/127</span>
+        <span class="pct">(100%)</span>
+        <span class="all-pass">✓ All passed</span>
+      </div>
+    </div>
+    <div class="summary-card" style="border-left:4px solid #00c47a">
+      <div class="suite-name">E2E Integration Tests</div>
+      <div class="suite-ts">Run at: 2026-07-19T21:42:37</div>
+      <div class="suite-stats">
+        <span class="big-num" style="color:#00c47a">29/29</span>
         <span class="pct">(100%)</span>
         <span class="all-pass">✓ All passed</span>
       </div>
@@ -108,6 +119,11 @@
   </div>
 
   <h2 class="suite-title">DDA State Machine Tests</h2>
+    <div class="section-block">
+      <h3>Requirement Coverage</h3>
+      <table><thead><tr><th style="width:70px">Result</th><th>Requirement</th></tr></thead>
+      <tbody><tr><td><span class="badge pass">PASS</span></td><td class='label'>dda_state_computation</td></tr><tr><td><span class="badge pass">PASS</span></td><td class='label'>attempt_history_recording</td></tr></tbody></table>
+    </div>
     <div class="section-block">
       <h3>1. Basic state transitions</h3>
       <table>
@@ -673,6 +689,11 @@
       </table>
     </div><h2 class="suite-title">RAG Dual-Track Retrieval Tests</h2>
     <div class="section-block">
+      <h3>Requirement Coverage</h3>
+      <table><thead><tr><th style="width:70px">Result</th><th>Requirement</th></tr></thead>
+      <tbody><tr><td><span class="badge pass">PASS</span></td><td class='label'>real_chromadb</td></tr><tr><td><span class="badge pass">PASS</span></td><td class='label'>track_a_metadata_filtering</td></tr><tr><td><span class="badge pass">PASS</span></td><td class='label'>track_b_semantic_retrieval</td></tr><tr><td><span class="badge pass">PASS</span></td><td class='label'>merge_and_deduplicate</td></tr></tbody></table>
+    </div>
+    <div class="section-block">
       <h3>RAG Distance Statistics</h3>
       <p class="dist-note">
         Distance is cosine distance between query and chunk vectors.
@@ -1211,6 +1232,30 @@
         <tbody>
         <tr>
           <td><span class="badge pass">PASS</span></td>
+          <td class="label">Forced cross-track duplicate is merged exactly once</td>
+          <td class="metrics"><code>ids=['FORCED_DUP', 'FORCED_UNIQUE']</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Cross-track duplicate is labelled A+B</td>
+          <td class="metrics"><code>track=A+B</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Track A sends room/state/difficulty metadata where filter</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">Track B sends wrong answer as semantic query with room scope</td>
+          <td class="metrics"></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
           <td class="label">Relevance: 24/7 support → Virtual Assistants (L1_C04)</td>
           <td class="metrics"><code>expected_id=L1_C04</code> &nbsp; <code>found=True</code> &nbsp; <code>rank=3</code> &nbsp; <code>dist=0.8448</code> &nbsp; <code>sim_pct=15.5000</code> &nbsp; <code>track=A+B</code> &nbsp; <code>returned_ids=['L1_C01', 'L1_C07', 'L1_C04', 'L1_C10', 'L1_C06']</code></td>
           <td class="detail"></td>
@@ -1660,6 +1705,275 @@
           <td><span class="badge pass">PASS</span></td>
           <td class="label">L3_C07: content has no markdown formatting</td>
           <td class="metrics"><code>chunk_id=L3_C07</code> &nbsp; <code>markdown_found=False</code></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div><h2 class="suite-title">End-to-End Integration Tests</h2>
+    <div class="section-block">
+      <h3>Requirement Coverage</h3>
+      <table><thead><tr><th style="width:70px">Result</th><th>Requirement</th></tr></thead>
+      <tbody><tr><td><span class="badge pass">PASS</span></td><td class='label'>claude_failure_preserves_dda_and_session</td></tr><tr><td><span class="badge pass">PASS</span></td><td class='label'>dda_then_claude_then_save</td></tr><tr><td><span class="badge pass">PASS</span></td><td class='label'>flow_first_error_calls_llm</td></tr><tr><td><span class="badge pass">PASS</span></td><td class='label'>stronger_support_calls_llm</td></tr><tr><td><span class="badge pass">PASS</span></td><td class='label'>session_reload_restores_progress</td></tr></tbody></table>
+    </div>
+    <div class="section-block">
+      <h3>TestScenario1_Flow</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_correct_answer_returns_flow</td>
+          <td class="metrics"><code>duration_seconds=0.0049</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_correct_answer_increments_attempt_count</td>
+          <td class="metrics"><code>duration_seconds=0.0021</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_correct_answer_does_not_set_help_requested</td>
+          <td class="metrics"><code>duration_seconds=0.0024</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_flow_state_persisted_in_firestore</td>
+          <td class="metrics"><code>duration_seconds=0.0022</code></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-block">
+      <h3>TestScenario2_Struggling</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_two_errors_produce_struggling</td>
+          <td class="metrics"><code>duration_seconds=0.0035</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_struggling_returns_doctor_k_message</td>
+          <td class="metrics"><code>duration_seconds=0.0028</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_struggling_state_persisted</td>
+          <td class="metrics"><code>duration_seconds=0.0028</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_three_errors_produce_stuck</td>
+          <td class="metrics"><code>duration_seconds=0.0037</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_correct_answer_after_struggling_returns_flow</td>
+          <td class="metrics"><code>duration_seconds=0.0035</code></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-block">
+      <h3>TestScenario3_Hint</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_hint_returns_confused_state</td>
+          <td class="metrics"><code>duration_seconds=0.0028</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_hint_returns_doctor_k_message</td>
+          <td class="metrics"><code>duration_seconds=0.0021</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_hint_sets_help_requested_in_firestore</td>
+          <td class="metrics"><code>duration_seconds=0.0027</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_repeated_hints_escalate_message_not_error</td>
+          <td class="metrics"><code>duration_seconds=0.0051</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_hint_after_wrong_answer_uses_last_wrong_answer</td>
+          <td class="metrics"><code>duration_seconds=0.0048</code></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-block">
+      <h3>TestScenario4_SessionReload</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_existing_incomplete_session_is_resumed</td>
+          <td class="metrics"><code>duration_seconds=0.0053</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_resumed_session_retains_dda_state</td>
+          <td class="metrics"><code>duration_seconds=0.0042</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_resumed_session_retains_attempt_count</td>
+          <td class="metrics"><code>duration_seconds=0.0051</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_dda_events_flushed_on_room_complete</td>
+          <td class="metrics"><code>duration_seconds=0.0056</code></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-block">
+      <h3>TestScenario5_LLMFailure</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_submit_returns_200_despite_llm_failure</td>
+          <td class="metrics"><code>duration_seconds=0.0025</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_dda_state_correct_despite_llm_failure</td>
+          <td class="metrics"><code>duration_seconds=0.0038</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_fallback_message_returned_on_llm_failure</td>
+          <td class="metrics"><code>duration_seconds=0.0034</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_session_saved_despite_llm_failure</td>
+          <td class="metrics"><code>duration_seconds=0.0026</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_attempts_and_dda_state_persist_despite_llm_failure</td>
+          <td class="metrics"><code>duration_seconds=0.0031</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_teach_sse_emits_error_event_on_llm_failure</td>
+          <td class="metrics"><code>duration_seconds=0.0033</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_hint_returns_200_with_fallback_on_llm_failure</td>
+          <td class="metrics"><code>duration_seconds=0.0030</code></td>
+          <td class="detail"></td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="section-block">
+      <h3>TestScenario6_RequirementContracts</h3>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:70px">Result</th>
+            <th>Test</th>
+            <th>Metrics</th>
+            <th>Failure detail</th>
+          </tr>
+        </thead>
+        <tbody>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_request_order_is_dda_then_claude_then_save</td>
+          <td class="metrics"><code>duration_seconds=0.0026</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_first_flow_error_calls_llm</td>
+          <td class="metrics"><code>duration_seconds=0.0027</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_stronger_support_calls_llm</td>
+          <td class="metrics"><code>duration_seconds=0.0029</code></td>
+          <td class="detail"></td>
+        </tr>
+        <tr>
+          <td><span class="badge pass">PASS</span></td>
+          <td class="label">test_cold_reload_restores_attempts_dda_and_room_progress</td>
+          <td class="metrics"><code>duration_seconds=0.0052</code></td>
           <td class="detail"></td>
         </tr>
         </tbody>
