@@ -23,7 +23,7 @@ from app.dda import (
 )
 from scripts.reporting import write_json_report
 
-# ── Report state ──────────────────────────────────────────────────────────────
+# Report state
 RESULTS   = []   # list of dicts, one per check()
 PASS_COUNT = 0
 FAIL_COUNT = 0

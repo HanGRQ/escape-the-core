@@ -1,6 +1,5 @@
 """
 Test Report Generator
-=====================
 Reads the most recent dda_*.json, rag_*.json, and e2e_*.json from
 backend/test_reports/
 and generates a single HTML report with formatted tables.
@@ -21,7 +20,7 @@ from reporting import default_results_dir, result_status
 
 RESULTS_DIR = default_results_dir()
 
-# ── Find the latest report files ─────────────────────────────────────────────
+# Find the latest report files
 
 def latest(prefix):
     files = sorted(RESULTS_DIR.glob(f"{prefix}_*.json"), reverse=True)
@@ -47,7 +46,7 @@ print(f"  DDA report : {dda_file.name if dda_file else 'not found'}")
 print(f"  RAG report : {rag_file.name if rag_file else 'not found'}")
 print(f"  E2E report : {e2e_file.name if e2e_file else 'not found'}")
 
-# ── HTML helpers ──────────────────────────────────────────────────────────────
+# HTML helpers
 
 def badge(status):
     normalized = str(status).upper()
@@ -170,7 +169,7 @@ def dist_stats_table(stats):
       </table>
     </div>"""
 
-# ── Assemble by section ───────────────────────────────────────────────────────
+# Assemble by section
 
 def group_by_section(results):
     sections = {}
@@ -196,7 +195,7 @@ def requirements_table(requirements):
       <tbody>{rows}</tbody></table>
     </div>"""
 
-# ── Build full HTML ───────────────────────────────────────────────────────────
+# Build full HTML
 
 ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 ts_display = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")

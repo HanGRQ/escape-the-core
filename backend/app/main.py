@@ -1,15 +1,14 @@
 """
-FastAPI Backend v2.3
-====================
 v2.3 fix: get_hint() now retrieves the player's most recent wrong answer
 from session history and uses the room's actual DDA state (which may be
 STRUGGLING or STUCK, not just CONFUSED) so that:
 
-  - Track B semantic search is targeted at the player's specific
-    misconception rather than a fixed "player requested hint" string.
-  - Doctor K's intervention level escalates correctly on repeated hint
-    clicks (CONFUSED → STRUGGLING → STUCK), matching the GDD §5.2
-    three-dimensional monitoring design.
+Track B semantic search is targeted at the player's specific misconception 
+rather than a fixed "player requested hint" string.
+
+Doctor K's intervention level escalates correctly on repeated hint clicks 
+(CONFUSED → STRUGGLING → STUCK), matching the GDD §5.2 three-dimensional 
+monitoring design.
 
 Previously both wrong_answer and dda_state were hardcoded in get_hint(),
 which caused every hint click to produce near-identical responses.
@@ -67,7 +66,7 @@ def get_rag() -> RAGRetriever:
     return _rag
 
 
-# ── Pydantic models ────────────────────────────────────────────────────────────
+# Pydantic models
 
 class StartSessionRequest(BaseModel):
     user_id: str
@@ -105,7 +104,7 @@ class SubmitQuizRequest(BaseModel):
     score: float
 
 
-# ── SSE helpers ────────────────────────────────────────────────────────────────
+# SSE helpers
 
 def sse_event(data: str) -> str:
     return f"event: message\ndata: {json.dumps(data)}\n\n"
@@ -119,7 +118,7 @@ def sse_error(msg: str) -> str:
 SSE_HEADERS = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
 
 
-# ── Session helpers ────────────────────────────────────────────────────────────
+# Session helpers
 
 def _get_session(user_id: str, session_id: str) -> Optional[SessionState]:
     session = load_session(user_id, session_id)
@@ -139,7 +138,7 @@ def _get_persona(user_id: str, session_id: str, fallback: str = "cold") -> str:
     return s.persona_stage if s else fallback
 
 
-# ── Streaming endpoints ────────────────────────────────────────────────────────
+# Streaming endpoints
 
 @app.get("/api/room/{room_id}/teach")
 def teach_room(
@@ -185,7 +184,7 @@ def chat_with_doctor_k(room_id: str, req: ChatRequest):
                              headers=SSE_HEADERS)
 
 
-# ── Session endpoints ──────────────────────────────────────────────────────────
+# Session endpoints
 
 @app.post("/api/session/start")
 def start_session(req: StartSessionRequest):
@@ -287,17 +286,11 @@ def get_hint(room_id: str, session_id: str, user_id: str):
     new_state = _dda.set_help_requested(session, room_id)
     room = session.get_room(room_id)
 
-    # ── Fix 1: use last wrong answer for targeted RAG ─────────────────────
     last_wrong = next(
         (r.answer_given for r in reversed(room.history) if not r.is_correct),
         ""          # fallback: empty string still works for Track B
     )
 
-    # ── Fix 2: escalate state on repeated hint clicks ─────────────────────
-    # Count how many times help has been explicitly requested this room.
-    # help_count is derived from the history — each time set_help_requested()
-    # is called it doesn't add a history record, so we track via a simple
-    # attribute we attach to the room object in memory.
     if not hasattr(room, '_hint_count'):
         room._hint_count = 0
     room._hint_count += 1

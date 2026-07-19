@@ -32,7 +32,7 @@ import chromadb
 from chromadb.config import Settings
 from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
 
-# ── Config ────────────────────────────────────────────────────────────────────
+# Config
 CHROMA_DIR  = Path(__file__).resolve().parent.parent / "knowledge_base" / "chroma_db"
 COLLECTION  = "escape_the_core"
 EMBED_MODEL = "all-MiniLM-L6-v2"
@@ -43,7 +43,6 @@ _TRACK_A_TYPES: dict[str, list[str]] = {
     "struggling": ["analogy", "use_case", "case_study", "challenge_solution", "step"],
     "stuck":      ["case_study", "challenge_solution", "analogy"],
 }
-# ─────────────────────────────────────────────────────────────────────────────
 
 
 @dataclass
@@ -52,9 +51,9 @@ class ChunkResult:
     concept:      str
     content_type: str
     difficulty:   str
-    content:      str          # raw document text stored in ChromaDB
+    content:      str  
     distance:     float
-    track:        str          # "A", "B", or "A+B"
+    track:        str 
 
 
 @dataclass
@@ -78,7 +77,7 @@ class RAGRetriever:
             embedding_function=embed_fn,
         )
 
-    # ── Public API ────────────────────────────────────────────────────────────
+    # Public API
 
     def retrieve_for_dda(
         self,
@@ -120,7 +119,7 @@ class RAGRetriever:
         except Exception:
             return None
 
-    # ── Track A ───────────────────────────────────────────────────────────────
+    # Track A
 
     def _track_a(self, player_state: str, room: str, k: int) -> list[ChunkResult]:
         # Guard: ChromaDB raises TypeError if n_results=0
@@ -147,7 +146,7 @@ class RAGRetriever:
         )
         return self._parse_results(res, "A")
 
-    # ── Track B ───────────────────────────────────────────────────────────────
+    # Track B
 
     def _track_b(self, wrong_answer: str, room: str, k: int) -> list[ChunkResult]:
         # Guard: ChromaDB raises TypeError if n_results=0
@@ -166,7 +165,7 @@ class RAGRetriever:
         )
         return self._parse_results(res, "B")
 
-    # ── Helpers ───────────────────────────────────────────────────────────────
+    # Helpers
 
     def _count_matching(self, where: dict) -> int:
         """Count docs matching a where clause so we don't ask for more than exist."""

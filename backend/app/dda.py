@@ -1,9 +1,9 @@
 """
-M3 — DDA State Machine
+M3 DDA State Machine
 Implements GDD §5: three-dimensional state monitoring (accuracy, latency,
 help-seeking) with four states: FLOW / CONFUSED / STRUGGLING / STUCK.
 
-This module is pure logic — no FastAPI, no Firebase imports.
+This module is pure logic, no FastAPI, no Firebase imports.
 It can be unit-tested in isolation.
 """
 
@@ -22,14 +22,14 @@ class DDAState(str, Enum):
 
 
 class PersonaStage(str, Enum):
-    COLD          = "cold"           # Game start
-    COLLABORATIVE = "collaborative"  # After Act I
-    CARING        = "caring"         # After Act II
-    ALLY          = "ally"           # After Act III
-    FULL_UNLOCK   = "full_unlock"    # After Final Quiz
+    COLD          = "cold"          
+    COLLABORATIVE = "collaborative"  
+    CARING        = "caring"        
+    ALLY          = "ally"           
+    FULL_UNLOCK   = "full_unlock"    
 
 
-# GDD §5.3 thresholds
+
 _CONSECUTIVE_STUCK      = 3    # errors on same question → STUCK
 _CONSECUTIVE_STRUGGLING = 2    # consecutive errors → STRUGGLING
 _SLOW_MULTIPLIER        = 2.0  # response time > N× average → CONFUSED
@@ -77,7 +77,7 @@ class SessionState:
 
 class DDAEngine:
     """
-    Stateless processor — takes a SessionState, processes an attempt,
+    Stateless processor, takes a SessionState, processes an attempt,
     returns the new DDAState and whether to show a scaffold.
 
     Caller is responsible for persisting SessionState (Firebase).
@@ -170,7 +170,6 @@ class DDAEngine:
             room.current_state = DDAState.CONFUSED
         return room.current_state
 
-    # ── Internal ──────────────────────────────────────────────────────────────
 
     @staticmethod
     def _compute_state(room: RoomState) -> DDAState:

@@ -20,7 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from app.rag import RAGRetriever, ChunkResult, _TRACK_A_TYPES
 from scripts.reporting import describe_chromadb, write_json_report
 
-# ── Report state ──────────────────────────────────────────────────────────────
+# Report state
 RESULTS    = []
 PASS_COUNT = 0
 FAIL_COUNT = 0

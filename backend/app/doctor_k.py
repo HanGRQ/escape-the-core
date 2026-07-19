@@ -1,5 +1,5 @@
 """
-Doctor K AI Persona — fully RAG-driven, multi-turn chat.
+Doctor K AI Persona, fully RAG-driven, multi-turn chat.
 
 Three modes:
   1. teach(room)           → active teaching from knowledge base (streaming SSE)
@@ -27,7 +27,7 @@ from typing import Generator
 # Update this in one place if Anthropic deprecates the snapshot in the future.
 MODEL_NAME = "claude-sonnet-4-6"
 
-# Appended to every persona system prompt — single source of truth for the
+# Appended to every persona system prompt, single source of truth for the
 # anti-markdown rule so it can't drift between personas.
 _NO_MARKDOWN_RULE = """
 
@@ -57,7 +57,7 @@ def _get_rag() -> RAGRetriever:
     return _rag
 
 
-# ── Persona system prompts ────────────────────────────────────────────────────
+# Persona system prompts
 
 _SYSTEM_PROMPTS: dict[str, str] = {
     PersonaStage.COLD: """You are Doctor K, a damaged AI system deep inside the Granite Core — a high-security underground research facility now in lockdown.
@@ -168,7 +168,7 @@ def build_knowledge_context(room_id: str, query: str = "") -> str:
     return "\n\n---\n\n".join(parts)
 
 
-# ── Mode 1: Teaching (streaming) ─────────────────────────────────────────────
+# Mode 1: Teaching (streaming) 
 
 def stream_teaching(room_id: str, persona_stage: str) -> Generator[str, None, None]:
     """
@@ -203,7 +203,7 @@ FORMAT RULES (non-negotiable):
             yield text
 
 
-# ── Mode 2: Chat / Q&A (streaming) ───────────────────────────────────────────
+# Mode 2: Chat / Q&A (streaming)
 
 def stream_chat(
     message: str,
@@ -244,7 +244,7 @@ Plain prose only — no markdown formatting of any kind (no asterisks, underscor
             yield text
 
 
-# ── Mode 3: DDA feedback (non-streaming) ─────────────────────────────────────
+# Mode 3: DDA feedback (non-streaming) 
 
 def generate_dda_response(
     dda_state: DDAState,
@@ -301,7 +301,7 @@ Respond in character as Doctor K. Under 80 words. Plain prose only — absolutel
     return response.content[0].text.strip()
 
 
-# ── Prompt evaluation (Act III) ───────────────────────────────────────────────
+# Prompt evaluation (Act III) 
 
 def evaluate_prompt(player_prompt: str, task: str = "system_restart_announcement") -> dict:
     system = """You are a prompt quality evaluator for an educational game about LLM prompting.

@@ -19,7 +19,7 @@ from tqdm import tqdm
 import chromadb
 from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
 
-# ── Config ────────────────────────────────────────────────────────────────────
+# Config
 load_dotenv()
 
 BASE_DIR    = Path(__file__).resolve().parent.parent
@@ -28,7 +28,6 @@ CHROMA_DIR  = BASE_DIR / "knowledge_base" / "chroma_db"
 COLLECTION  = "escape_the_core"
 # all-MiniLM-L6-v2: 90MB, fast, excellent for English semantic retrieval
 EMBED_MODEL = "all-MiniLM-L6-v2"
-# ─────────────────────────────────────────────────────────────────────────────
 
 
 def build():

@@ -1,6 +1,5 @@
 """
-End-to-End Integration Tests — Escape the Core
-===============================================
+End-to-End Integration Tests
 Five high-value scenarios that each exercise a complete slice of the
 system: HTTP layer → DDA engine → RAG retrieval → LLM feedback →
 Firestore persistence → session reload.
@@ -16,7 +15,6 @@ available (build_knowledge_base.py has been run), otherwise falls back
 to a lightweight stub so the suite can run in a clean environment.
 
 Scenario inventory
-──────────────────
 1. FLOW — correct answer keeps state FLOW and saves progress to Firestore
 2. STRUGGLING — two consecutive wrong answers escalate state and return scaffold
 3. HINT / CONFUSED — help-seeking signal triggers CONFUSED and returns content
